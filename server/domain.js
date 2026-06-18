@@ -1,6 +1,7 @@
 import { findWeaponCatalogEntry, statCatalog, weaponCatalog } from "./catalog.js";
 import { fetchLiveHitsForRivens, MARKET_REFRESH_INTERVAL_MS } from "./market.js";
 import { listRivens } from "./store.js";
+import { analyzeRiven, dispositionSummary, recommendedAnalysisStats } from "../shared/riven-analysis.js";
 
 export function listWeapons({ lang = "en", query = "" } = {}) {
   const needle = query.trim().toLowerCase();
@@ -11,6 +12,11 @@ export function listWeapons({ lang = "en", query = "" } = {}) {
       label: lang === "zh" ? weapon.zh : weapon.family,
       labels: { en: weapon.family, zh: weapon.zh },
       group: weapon.group,
+      disposition: weapon.disposition,
+      analysis: {
+        disposition: dispositionSummary(weapon.disposition),
+        recommended: recommendedAnalysisStats({ group: weapon.group, statCatalog, lang })
+      },
       rivenEligible: true
     }))
     .sort((a, b) => a.family.localeCompare(b.family));
@@ -18,6 +24,25 @@ export function listWeapons({ lang = "en", query = "" } = {}) {
 
 export function findWeapon(familyOrLabel) {
   return findWeaponCatalogEntry(familyOrLabel);
+}
+
+export function enrichRiven(riven, { lang = "en" } = {}) {
+  const found = findWeapon(riven.target);
+  if (!found) return riven;
+  return {
+    ...riven,
+    weapon: {
+      family: found.family,
+      label: lang === "zh" ? found.zh : found.family,
+      labels: { en: found.family, zh: found.zh },
+      group: found.group,
+      disposition: found.disposition,
+      analysis: {
+        disposition: dispositionSummary(found.disposition),
+        recommended: recommendedAnalysisStats({ group: found.group, statCatalog, lang })
+      }
+    }
+  };
 }
 
 export function listStats({ weapon = "Rubico", polarity = "positive", lang = "en" } = {}) {
@@ -34,6 +59,27 @@ export function listStats({ weapon = "Rubico", polarity = "positive", lang = "en
       positiveOnly: Boolean(stat.positiveOnly),
       groups: stat.groups
     }));
+}
+
+export function getRivenAnalysis({ weapon = "Rubico", positives = "", negative = "", lang = "en" } = {}) {
+  const found = findWeapon(weapon);
+  if (!found) return null;
+  return {
+    ...analyzeRiven({
+      weapon: found.family,
+      group: found.group,
+      disposition: found.disposition,
+      positives,
+      negative,
+      statCatalog,
+      lang
+    }),
+    weapon: {
+      family: found.family,
+      label: lang === "zh" ? found.zh : found.family,
+      labels: { en: found.family, zh: found.zh }
+    }
+  };
 }
 
 export async function listLiveWeapons({ lang = "en", query = "" } = {}) {

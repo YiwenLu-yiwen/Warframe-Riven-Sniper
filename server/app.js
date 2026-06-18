@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
-import { health, listHits, listLiveWeapons, listStats } from "./domain.js";
+import { enrichRiven, getRivenAnalysis, health, listHits, listLiveWeapons, listStats } from "./domain.js";
 import { fetchMarketHits, fetchMarketWeaponFamilies } from "./market.js";
 import { createRiven, deleteRiven, listRivens } from "./store.js";
 
@@ -82,7 +82,21 @@ export async function handleRequest(req, res) {
     return sendJson(res, 200, { data });
   }
 
-  if (url.pathname === "/api/rivens" && req.method === "GET") return sendJson(res, 200, { data: listRivens() });
+  if (url.pathname === "/api/analysis" && req.method === "GET") {
+    const data = getRivenAnalysis({
+      weapon: url.searchParams.get("weapon") || "Rubico",
+      positives: url.searchParams.get("positives") || "",
+      negative: url.searchParams.get("negative") || "",
+      lang: url.searchParams.get("lang") || "en"
+    });
+    if (!data) return sendError(res, 404, "WEAPON_NOT_FOUND", `No Riven-capable weapon family named ${url.searchParams.get("weapon") || "Rubico"}.`);
+    return sendJson(res, 200, { data });
+  }
+
+  if (url.pathname === "/api/rivens" && req.method === "GET") {
+    const lang = url.searchParams.get("lang") || "en";
+    return sendJson(res, 200, { data: listRivens().map(riven => enrichRiven(riven, { lang })) });
+  }
 
   if (url.pathname === "/api/rivens" && req.method === "POST") {
     try {

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { handleRequest } from "../server/app.js";
-import { listStats, listWeapons } from "../server/domain.js";
+import { getRivenAnalysis, listStats, listWeapons } from "../server/domain.js";
 import {
   marketStatKey,
   marketSearchParamsForRiven,
@@ -41,6 +41,21 @@ describe("Frontend preferences", () => {
     assert.match(html, /<span[^>]*aria-hidden="true">p<\/span>/);
     assert.match(html, /addEventListener\("input", sanitizePriceInput\)/);
   });
+
+  it("renders weapon disposition and Web Hit stat grades from the shared analysis module", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /analyzeListingAttributes/);
+    assert.match(html, /listingAnalysisCacheKey/);
+    assert.match(html, /weaponDispositionLine/);
+    assert.match(html, /hitAnalysisCache/);
+    assert.match(html, /listing-grade-stack/);
+    assert.match(html, /renderListingGradeBadges/);
+    assert.match(html, /renderStatChips/);
+    assert.doesNotMatch(html, /class="grade-stack/);
+    assert.doesNotMatch(html, /class="mini-grade/);
+    assert.match(html, /id="modalAnalysis"/);
+  });
 });
 
 describe("Riven weapon catalog", () => {
@@ -67,6 +82,33 @@ describe("Riven weapon catalog", () => {
     assert.equal(rubico.label, "绝路");
     assert.equal(catchmoon.label, "捕月");
     assert.equal(splitSword.label, "暗黑分合剑");
+  });
+
+  it("includes disposition values for analysis context", () => {
+    const weapons = listWeapons();
+    const rubico = weapons.find(weapon => weapon.family === "Rubico");
+    const missingDisposition = weapons.filter(weapon => !Number.isFinite(Number(weapon.disposition)) || Number(weapon.disposition) <= 0);
+
+    assert.deepEqual(missingDisposition, []);
+    assert.equal(typeof rubico.disposition, "number");
+    assert.equal(rubico.analysis.disposition.grade, "C");
+    assert.equal(rubico.analysis.recommended.positives.length > 0, true);
+  });
+});
+
+describe("Riven analysis API", () => {
+  it("returns localized grade and stat-tier analysis for a weapon watch", () => {
+    const analysis = getRivenAnalysis({
+      weapon: "Rubico",
+      positives: "critical_chance,critical_damage,multishot",
+      negative: "zoom",
+      lang: "zh"
+    });
+
+    assert.equal(analysis.grade, "A");
+    assert.equal(analysis.weapon.label, "绝路");
+    assert.equal(analysis.positives[0].label, "暴击几率");
+    assert.equal(analysis.negative.label, "变焦");
   });
 });
 
@@ -209,6 +251,33 @@ describe("HTTP API", () => {
 
     assert.equal(response.status, 404);
     assert.equal(body.error.code, "WEAPON_NOT_FOUND");
+  });
+
+  it("serves Riven analysis through the HTTP API", async () => {
+    const response = await fetch(`${baseUrl}/api/analysis?weapon=Rubico&positives=critical_chance,critical_damage,multishot&negative=zoom&lang=zh`);
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.data.grade, "A");
+    assert.equal(body.data.weapon.label, "绝路");
+    assert.equal(body.data.negative.label, "变焦");
+  });
+
+  it("enriches stored Rivens with weapon disposition metadata", async () => {
+    const created = createRiven({
+      target: "Acrid",
+      positives: ["critical_chance"],
+      price: "100"
+    });
+    const response = await fetch(`${baseUrl}/api/rivens?lang=zh`);
+    const body = await response.json();
+    const acrid = body.data.find(riven => riven.id === created.id);
+
+    assert.equal(response.status, 200);
+    assert.equal(acrid.weapon.family, "Acrid");
+    assert.equal(typeof acrid.weapon.disposition, "number");
+    assert.equal(acrid.weapon.analysis.disposition.dots, "●●●●●");
+    assert.equal(deleteRiven(created.id), true);
   });
 });
 

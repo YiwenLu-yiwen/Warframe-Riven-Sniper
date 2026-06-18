@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Warframe 裂罅狙击 v1.0</title>
+  <title>Warframe 裂罅狙击 v1.1</title>
   <style>
     :root {
       --bg: #12100c;
@@ -458,6 +458,76 @@
       font-size: 12px;
     }
 
+    .modal-analysis {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #15120e;
+      padding: 10px;
+      display: grid;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .analysis-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .analysis-head strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .grade-pill {
+      min-width: 34px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 8px;
+      text-align: center;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    .grade-a,
+    .tier-a { color: var(--green); border-color: rgba(143,189,105,.5); }
+    .grade-b,
+    .tier-b { color: var(--blue); border-color: rgba(120,183,189,.48); }
+    .grade-c,
+    .tier-c { color: var(--accent); border-color: rgba(214,168,76,.5); }
+    .grade-d,
+    .tier-d { color: var(--red); border-color: rgba(210,107,86,.52); }
+
+    .analysis-meta,
+    .analysis-reco {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .analysis-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .analysis-chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 12px;
+      line-height: 1.35;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .side-actions {
       padding: 12px;
       border-top: 1px solid var(--line);
@@ -670,6 +740,22 @@
     .listing-title small {
       margin-top: 0;
       flex: 0 0 auto;
+    }
+
+    .listing-grade-stack {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .listing-grade {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 6px;
+      font-size: 11px;
+      line-height: 1.35;
+      font-weight: 800;
     }
 
     .stat-chips {
@@ -958,7 +1044,7 @@
         <div class="brand-copy">
           <div class="brand-title">
             <h1 data-i18n="title">裂罅狙击</h1>
-            <span class="version-pill">v1.0</span>
+            <span class="version-pill">v1.1</span>
           </div>
         </div>
       </div>
@@ -1029,7 +1115,7 @@
         </section>
       </main>
     </div>
-    <footer class="app-footer">Warframe Riven Sniper v1.0 · MIT License · 2026</footer>
+    <footer class="app-footer">Warframe Riven Sniper v1.1 · MIT License · 2026</footer>
   </div>
 
   <div class="modal" id="addModal" hidden>
@@ -1077,6 +1163,9 @@
           <div class="field span-12">
             <label data-i18n="negativeAttr" id="negativeLabel">负面词条</label>
             <select id="modalNegative"></select>
+          </div>
+          <div class="field span-12">
+            <div class="modal-analysis" id="modalAnalysis" aria-live="polite"></div>
           </div>
           <div class="field detail-section">
             <div class="market-details">
@@ -1164,6 +1253,12 @@
       queryHasPriceFilter,
       queryMatchesTextAndPrice
     } from "/public/search-query.js";
+    import {
+      analyzeListingAttributes,
+      analyzeRiven,
+      listingAnalysisCacheKey,
+      statTierMark
+    } from "/shared/riven-analysis.js";
 
     const dictionary = {
       en: {
@@ -1217,6 +1312,11 @@
         rivenUnits: "Rivens",
         createRiven: "Create Riven",
         createHint: "Choose a weapon and stats; the Riven name is generated from positive attributes.",
+        analysis: "Riven Analysis",
+        disposition: "Disposition",
+        statPriority: "Priority",
+        safeNegative: "Safe negative",
+        noAnalysis: "Choose a weapon to see stat tiers.",
         close: "Close",
         cancel: "Cancel",
         create: "Create"
@@ -1272,6 +1372,11 @@
         rivenUnits: "条裂罅",
         createRiven: "创建裂罅",
         createHint: "选择武器和词条；裂罅名称会根据正面词条自动生成。",
+        analysis: "裂罅分析",
+        disposition: "倾向",
+        statPriority: "优先",
+        safeNegative: "安全负面",
+        noAnalysis: "选择武器后显示词条分级。",
         close: "关闭",
         cancel: "取消",
         create: "创建"
@@ -1406,6 +1511,7 @@
     let visibleHitCount = 0;
     let hitSort = "priceAsc";
     let refreshTimer = null;
+    const hitAnalysisCache = new Map();
 
     function t(key) {
       return dictionary[lang][key] || key;
@@ -1441,6 +1547,68 @@
       return [...positives, negative].filter(Boolean).join(", ");
     }
 
+    function dispositionText(summary) {
+      const value = Number(summary.value);
+      const number = Number.isFinite(value) && value > 0 ? value.toFixed(2) : "?";
+      return `${number} ${summary.dots}`;
+    }
+
+    function analysisForTarget(target, positives = [], negative = "") {
+      const family = validRivenWeaponFamily(target, "");
+      if (!family) return null;
+      const meta = weaponMeta[family] || {};
+      return analyzeRiven({
+        weapon: family,
+        group: meta.group || "rifle",
+        disposition: meta.disposition || 0,
+        positives,
+        negative,
+        statCatalog,
+        lang
+      });
+    }
+
+    function renderAnalysisChip(row) {
+      const mark = statTierMark(row);
+      return `<span class="analysis-chip tier-${row.tier.toLowerCase()}" title="${escapeHtml(`${row.sign}${row.label} ${mark}`)}">${escapeHtml(`${row.sign}${row.label}`)} <strong>${escapeHtml(mark)}</strong></span>`;
+    }
+
+    function weaponDispositionLine(weapon) {
+      const analysis = analysisForTarget(weapon);
+      if (!analysis) return `${t("disposition")} ${lang === "zh" ? "加载中" : "loading"}`;
+      return `${t("disposition")} ${dispositionText(analysis.disposition)}`;
+    }
+
+    function renderAnalysisBlock(analysis) {
+      if (!analysis) return `<div class="analysis-meta">${t("noAnalysis")}</div>`;
+      const selected = [...analysis.positives, analysis.negative].filter(Boolean);
+      const recommendedPositives = analysis.recommended.positives.slice(0, 4).map(row => `${row.sign}${row.label}`).join(" / ");
+      const recommendedNegatives = analysis.recommended.safeNegatives.slice(0, 3).map(row => `${row.sign}${row.label}`).join(" / ");
+      return `
+        <div class="analysis-head">
+          <strong>${escapeHtml(t("analysis"))}</strong>
+          <span class="grade-pill grade-${analysis.grade.toLowerCase()}">${escapeHtml(analysis.grade)}</span>
+        </div>
+        <div class="analysis-meta">${escapeHtml(displayWeaponName(analysis.weapon))} · ${escapeHtml(t("disposition"))} ${escapeHtml(dispositionText(analysis.disposition))}</div>
+        ${selected.length ? `<div class="analysis-chips">${selected.map(renderAnalysisChip).join("")}</div>` : ""}
+        <div class="analysis-reco">${escapeHtml(t("statPriority"))}: ${escapeHtml(recommendedPositives || "-")}</div>
+        <div class="analysis-reco">${escapeHtml(t("safeNegative"))}: ${escapeHtml(recommendedNegatives || "-")}</div>
+      `;
+    }
+
+    function renderModalAnalysis() {
+      const node = document.querySelector("#modalAnalysis");
+      if (!node) return;
+      const target = currentModalWeaponFamily();
+      const positives = [
+        document.querySelector("#modalPositive1")?.value,
+        document.querySelector("#modalPositive2")?.value,
+        document.querySelector("#modalPositive3")?.value
+      ];
+      const negative = document.querySelector("#modalNegative")?.value || "";
+      node.innerHTML = renderAnalysisBlock(target ? analysisForTarget(target, positives, negative) : null);
+    }
+
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"']/g, char => ({
         "&": "&amp;",
@@ -1462,6 +1630,16 @@
       if (!title || !weapon || displayWeapon === weapon) return title;
       const escapedWeapon = weapon.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       return title.replace(new RegExp(`^${escapedWeapon}\\b`, "i"), displayWeapon);
+    }
+
+    function applyRivenWeaponMeta(riven) {
+      const weapon = riven?.weapon;
+      if (!weapon?.family) return;
+      weaponMeta[weapon.family] = {
+        zh: weapon.labels?.zh || weapon.label || weapon.family,
+        group: weapon.group || weaponMeta[weapon.family]?.group || null,
+        disposition: Number(weapon.disposition) || weaponMeta[weapon.family]?.disposition || 0
+      };
     }
 
     function formatTime(value) {
@@ -1489,6 +1667,30 @@
         <div class="stat-chips">
           ${attributes.map(renderChip).join("")}
         </div>
+      `;
+    }
+
+    function listingAttributeGrades(hit) {
+      const attributes = hit.attributes || [];
+      if (!attributes.length) return [];
+      const weapon = rivenWeaponFamily(hit.weapon || hit.title?.split(" ")[0] || "");
+      const group = weaponGroup(weapon) || "rifle";
+      const cacheKey = `${lang}::${listingAnalysisCacheKey({ weapon, group, attributes })}`;
+      let grades = hitAnalysisCache.get(cacheKey);
+      if (!grades) {
+        grades = analyzeListingAttributes({ weapon, group, attributes, statCatalog, lang });
+        hitAnalysisCache.set(cacheKey, grades);
+      }
+      return grades;
+    }
+
+    function renderListingGradeBadges(hit) {
+      const grades = listingAttributeGrades(hit);
+      if (!grades.length) return "";
+      return `
+        <span class="listing-grade-stack" aria-label="${escapeHtml(t("statPriority"))}">
+          ${grades.map(grade => `<span class="listing-grade tier-${grade.tier.toLowerCase()}" title="${escapeHtml(`${grade.sign}${grade.label} ${statTierMark(grade)}`)}">${escapeHtml(statTierMark(grade))}</span>`).join("")}
+        </span>
       `;
     }
 
@@ -1551,6 +1753,7 @@
           <div class="cell">
             <div class="listing-title">
               <strong title="${escapeHtml(hit.title || hit.rivenName || "")}">${escapeHtml(displayHitTitle(hit))}</strong>
+              ${renderListingGradeBadges(hit)}
             </div>
             ${renderStatChips(hit)}
           </div>
@@ -1815,6 +2018,7 @@
       fillAllStatSelects();
       updateStatScopeLabels();
       updateModalGeneratedName();
+      renderModalAnalysis();
     }
 
     function updateStatScopeLabels() {
@@ -1824,7 +2028,7 @@
 
     function renderLanguage() {
       document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
-      document.title = lang === "zh" ? "Warframe 裂罅狙击 v1.0" : "Warframe Riven Sniper v1.0";
+      document.title = lang === "zh" ? "Warframe 裂罅狙击 v1.1" : "Warframe Riven Sniper v1.1";
       document.querySelector("#search").placeholder = lang === "zh" ? "搜索武器、词条、卖家、价格、时间" : "Search weapon, stat, seller, price, time";
       document.querySelector("#search").setAttribute("aria-label", lang === "zh" ? "智能搜索" : "Smart search");
       document.querySelectorAll("[data-lang]").forEach(button => {
@@ -1838,6 +2042,7 @@
         fillAllStatSelects();
         renderWeaponMenu(modalWeaponFamily, !document.querySelector("#weaponMenu").hidden);
         updateStatScopeLabels();
+        renderModalAnalysis();
       }
       if (!document.querySelector("#hitsModal").hidden) renderAllHitsModal();
       if (!document.querySelector("#weaponsModal").hidden) renderWeaponsModal();
@@ -1860,7 +2065,8 @@
       const families = (body.data || []).map(weapon => {
         weaponMeta[weapon.family] = {
           zh: weapon.labels?.zh || weapon.family,
-          group: weapon.group || weaponMeta[weapon.family]?.group || null
+          group: weapon.group || weaponMeta[weapon.family]?.group || null,
+          disposition: Number(weapon.disposition) || weaponMeta[weapon.family]?.disposition || 0
         };
         return weapon.family;
       });
@@ -1885,8 +2091,9 @@
     async function refreshData({ force = false } = {}) {
       document.querySelector("#sourceStatus").textContent = t("refreshing");
       try {
-        const rivenBody = await apiJson("/api/rivens");
+        const rivenBody = await apiJson(`/api/rivens?lang=${lang === "zh" ? "zh" : "en"}`);
         rivens = rivenBody.data || [];
+        rivens.forEach(applyRivenWeaponMeta);
         try {
           const hitBody = await apiJson(`/api/hits?scope=${onlineOnly ? "online" : "all"}${force ? "&force=true" : ""}`);
           listings = hitBody.data || [];
@@ -1935,7 +2142,7 @@
         <section class="weapon-group" aria-label="${escapeHtml(displayWeaponName(weapon))}">
           <div class="weapon-group-head">
             <strong>${escapeHtml(displayWeaponName(weapon))}</strong>
-            <span>${group.length} ${group.length === 1 ? t("rivenUnit") : t("rivenUnits")}</span>
+            <span>${escapeHtml(weaponDispositionLine(weapon))} · ${group.length} ${group.length === 1 ? t("rivenUnit") : t("rivenUnits")}</span>
           </div>
           <div class="weapon-rivens">
             ${group.map(riven => {
@@ -1972,6 +2179,7 @@
         positives: [document.querySelector("#modalPositive1").value, document.querySelector("#modalPositive2").value, document.querySelector("#modalPositive3").value]
       };
       document.querySelector("#modalName").textContent = displayGeneratedRivenName(preview);
+      renderModalAnalysis();
     }
 
     function renderMetrics() {
@@ -2331,7 +2539,7 @@
     document.querySelector("#weaponsModal").addEventListener("click", event => {
       if (event.target.id === "weaponsModal") closeWeaponsModal();
     });
-    ["modalTarget", "modalPositive1", "modalPositive2", "modalPositive3"].forEach(id => {
+    ["modalTarget", "modalPositive1", "modalPositive2", "modalPositive3", "modalNegative"].forEach(id => {
       document.querySelector(`#${id}`).addEventListener("input", updateModalGeneratedName);
       document.querySelector(`#${id}`).addEventListener("change", updateModalGeneratedName);
     });
@@ -2351,6 +2559,7 @@
         modalWeaponFamily = validRivenWeaponFamily(typedFamily);
         fillAllStatSelects();
         updateStatScopeLabels();
+        renderModalAnalysis();
       }
       renderWeaponMenu(event.target.value, true);
     });
