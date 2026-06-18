@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-43853d">
-  <img alt="版本 v1.1" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-v1.1-d6a84c">
+  <img alt="版本 v1.2" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-v1.2-d6a84c">
   <img alt="许可证 MIT" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-d6a84c">
   <img alt="数据源 Warframe Market" src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90-warframe.market-78b7bd">
   <img alt="裂罅武器 423" src="https://img.shields.io/badge/%E8%A3%82%E7%BD%85%E6%AD%A6%E5%99%A8-423-1d1a14">
