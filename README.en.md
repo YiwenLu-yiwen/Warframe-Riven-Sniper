@@ -5,14 +5,14 @@
 <h1 align="center">Warframe Riven Sniper</h1>
 
 <p align="center">
-  A weapon-family Riven auction sniper with conservative Warframe.Market refresh behavior.
+  A weapon-family Riven auction sniper with conservative dual-market refresh behavior.
 </p>
 
 <p align="center">
   <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-43853d">
   <img alt="Version v1.2" src="https://img.shields.io/badge/version-v1.2-d6a84c">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-d6a84c">
-  <img alt="Data source Warframe Market" src="https://img.shields.io/badge/source-warframe.market-78b7bd">
+  <img alt="Data source warframe.market + riven.market" src="https://img.shields.io/badge/source-warframe.market%20%2B%20riven.market-78b7bd">
   <img alt="Riven weapons 423" src="https://img.shields.io/badge/riven_weapons-423-1d1a14">
 </p>
 
@@ -27,7 +27,7 @@
 
 A small web app for tracking Warframe Riven auction listings by weapon family, selected positive stats, optional negative stat, seller status, price, and listing time.
 
-The app keeps the workflow simple: create one or more Riven watches under a weapon, refresh Warframe.Market auction data conservatively, and surface matching reachable listings with a copy-ready in-game whisper.
+The app keeps the workflow simple: create one or more Riven watches under a weapon, refresh Warframe.Market and Riven.market data conservatively, and surface matching reachable listings with a copy-ready in-game whisper.
 
 ### Features
 
@@ -35,7 +35,8 @@ The app keeps the workflow simple: create one or more Riven watches under a weap
 - Uses a generated catalog of Riven-capable weapon families.
 - Supports English and Chinese weapon/stat display names.
 - Filters market results by positive and negative Riven stats.
-- Treats Warframe.Market `online` and `ingame` sellers as reachable.
+- Combines Warframe.Market and Riven.market Riven listings; rows show `WM` / `RM` source tags.
+- Treats Warframe.Market `online` and `ingame` sellers as reachable, and normalizes Riven.market online / in-game states into online hits.
 - Refreshes market data with per-weapon grouping, cache reuse, and rate-limit backoff.
 - Shows system notices for new online listings, below-threshold prices, and rate-limit waiting states.
 - Keeps local Riven watches in `data/rivens.json`, ignored by git.
@@ -62,15 +63,24 @@ Open `http://localhost:4173`.
 | --- | --- |
 | `public/index.html` | Single-page UI |
 | `server/app.js` | Static file serving and JSON API routes |
-| `server/market.js` | Warframe.Market auction normalization, caching, grouping, and rate-limit behavior |
+| `server/market.js` | Warframe.Market and Riven.market listing normalization, caching, grouping, and rate-limit behavior |
 | `server/riven-weapons.generated.js` | Generated weapon catalog from Warframe Wiki disposition data plus localized Warframe Status item data |
 | `server/store.js` | Local Riven watch persistence in `data/rivens.json` |
 
+### Data Sources
+
+- `warframe.market`: primary market source, using the public auction API to search Riven listings by weapon.
+- `riven.market`: supplemental market source. The site does not expose a stable public JSON API, so the app queries the same HTML listing endpoint used by its list page and normalizes `.riven` data into the shared listing format.
+- `Warframe Wiki`: source for Riven-capable weapon families and Riven disposition data.
+- `warframestat.us`: source for localized weapon names.
+
+Riven.market runs as a best-effort supplemental source. If it is slow, times out, or changes its page structure, the backend keeps Warframe.Market results and does not let the supplemental source block the main refresh.
+
 ### Refresh Behavior
 
-The backend defaults to a 2-minute cache window. During refresh, it groups watches by weapon and searches each weapon once, then filters the returned auctions locally for every matching Riven watch.
+The backend defaults to a 2-minute cache window. During refresh, it groups watches by weapon and searches each weapon once per market source, then filters the returned listings locally for every matching Riven watch.
 
-Market requests are sequential and spaced by 1 second. If Warframe.Market returns `429`, the backend retries the same weapon with progressive backoff: `10s`, `20s`, then `40s`. Large force-refreshes reuse valid per-weapon cache entries instead of refreshing every tracked weapon at once.
+Warframe.Market requests are sequential and spaced by 1 second. If Warframe.Market returns `429`, the backend retries the same weapon with progressive backoff: `10s`, `20s`, then `40s`. Large force-refreshes reuse valid per-weapon cache entries instead of refreshing every tracked weapon at once. Riven.market requests use a short timeout and independent cache; failures are recorded as source status and do not block primary market listings.
 
 ### System Notices
 
@@ -96,7 +106,7 @@ Discord / QQ forwarding belongs on the backend server: configure webhook URLs or
 
 ### Notes
 
-- This project is not affiliated with Digital Extremes or Warframe.Market.
+- This project is not affiliated with Digital Extremes, Warframe.Market, or Riven.market.
 - Warframe and related names are trademarks of their respective owners.
 - Stored Riven watches are local machine data in `data/rivens.json`, which is ignored by git.
 

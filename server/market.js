@@ -1,6 +1,7 @@
 import { findWeaponCatalogEntry, weaponCatalog } from "./catalog.js";
 
 const MARKET_BASE_URL = "https://api.warframe.market/v1";
+const RIVEN_MARKET_BASE_URL = "https://riven.market/_modules/riven/showrivens.php";
 const VARIANT_WORDS = new Set(["prime", "vandal", "wraith"]);
 export const MARKET_REFRESH_INTERVAL_MS = 60000;
 export const MARKET_MIN_REFRESH_INTERVAL_MS = 10000;
@@ -9,6 +10,7 @@ export const MARKET_RATE_LIMIT_BACKOFF_MS = 10000;
 export const MARKET_FORCE_REFRESH_WEAPON_LIMIT = 3;
 const MARKET_RATE_LIMIT_STATUS = 429;
 const MARKET_WEAPON_SORTS = ["price_asc", "price_desc"];
+const RIVEN_MARKET_TIMEOUT_MS = 8000;
 
 const attributeLabels = {
   "base_damage_/_melee_damage": "Base Damage",
@@ -54,8 +56,45 @@ const appToMarketStat = {
   critical_chance_slide: "critical_chance_on_slide_attack"
 };
 
+const appToRivenMarketStat = {
+  damage: "Damage",
+  multishot: "Multi",
+  fire_rate: "Speed",
+  damage_vs_corpus: "Corpus",
+  damage_vs_grineer: "Grineer",
+  damage_vs_infested: "Infested",
+  impact: "Impact",
+  puncture: "Puncture",
+  slash: "Slash",
+  cold: "Cold",
+  electricity: "Electric",
+  heat: "Heat",
+  toxin: "Toxin",
+  combo_duration: "Combo",
+  critical_chance: "CritChance",
+  critical_chance_slide: "Slide",
+  critical_damage: "CritDmg",
+  finisher_damage: "Finisher",
+  projectile_speed: "Flight",
+  ammo_maximum: "Ammo",
+  magazine_capacity: "Magazine",
+  punch_through: "Punch",
+  reload_speed: "Reload",
+  range: "Range",
+  status_chance: "StatusC",
+  status_duration: "StatusD",
+  recoil: "Recoil",
+  zoom: "Zoom",
+  initial_combo: "InitC",
+  heavy_attack_efficiency: "ComboEfficiency",
+  additional_combo_count_chance: "ComboGainExtra"
+};
+
 const marketToAppStat = new Map(
   Object.entries(appToMarketStat).map(([appKey, marketKey]) => [marketKey, appKey])
+);
+const rivenMarketToAppStat = new Map(
+  Object.entries(appToRivenMarketStat).map(([appKey, marketKey]) => [marketKey, appKey])
 );
 
 const cache = new Map();
@@ -103,6 +142,14 @@ export function marketStatKey(appKey) {
 
 export function appStatKey(marketKey) {
   return marketToAppStat.get(marketKey) || marketKey;
+}
+
+export function rivenMarketStatKey(appKey) {
+  return appToRivenMarketStat[appKey] || appKey;
+}
+
+export function appStatKeyFromRivenMarket(marketKey) {
+  return rivenMarketToAppStat.get(marketKey) || marketKey;
 }
 
 export function weaponFamilyFromMarketName(value) {
@@ -159,6 +206,8 @@ export function normalizeMarketAuction(auction) {
 
   return {
     id: auction.id,
+    source: "warframe.market",
+    marketUrl: `https://warframe.market/auction/${auction.id}`,
     weapon,
     title: `${weapon} ${auction.item?.name || "Riven"}`.trim(),
     rivenName: `${weapon} ${auction.item?.name || "Riven"}`.trim(),
@@ -230,6 +279,171 @@ function wait(ms) {
 
 function cloneHit(hit) {
   return { ...hit, attributes: [...(hit.attributes || [])] };
+}
+
+function decodeHtml(value = "") {
+  return String(value)
+    .replace(/&gt;/g, ">")
+    .replace(/&lt;/g, "<")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#039;/g, "'");
+}
+
+function stripHtml(value = "") {
+  return decodeHtml(String(value).replace(/<[^>]+>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function attrValue(html = "", name = "") {
+  const match = html.match(new RegExp(`${name}="([^"]*)"`, "i"));
+  return match ? decodeHtml(match[1]) : "";
+}
+
+function rivenMarketWeaponNameFromFamily(family) {
+  const weapon = findWeaponCatalogEntry(family);
+  return (weapon?.family || family)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("_");
+}
+
+function rivenMarketFamilyFromWeaponName(value) {
+  const normalized = String(value || "").replace(/_/g, " ");
+  return findWeaponCatalogEntry(normalized)?.family || normalized;
+}
+
+function rivenMarketSearchParamsForWeapon(weapon) {
+  return {
+    baseurl: "Lw==",
+    platform: "ALL",
+    limit: "50",
+    recency: "-1",
+    veiled: "false",
+    onlinefirst: "true",
+    polarity: "all",
+    rank: "all",
+    mastery: "16",
+    weapon: rivenMarketWeaponNameFromFamily(weapon),
+    stats: "Any",
+    neg: "all",
+    price: "99999",
+    rerolls: "-1",
+    sort: "time",
+    direction: "ASC",
+    page: "1"
+  };
+}
+
+function rivenMarketSearchUrlForWeapon(weapon) {
+  const url = new URL(RIVEN_MARKET_BASE_URL);
+  Object.entries(rivenMarketSearchParamsForWeapon(weapon)).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  return url;
+}
+
+async function readTextWithTimeout(url, {
+  fetchImpl = fetch,
+  timeoutMs = RIVEN_MARKET_TIMEOUT_MS
+} = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.max(1000, Number(timeoutMs) || RIVEN_MARKET_TIMEOUT_MS));
+  try {
+    const response = await fetchImpl(url, {
+      signal: controller.signal,
+      headers: {
+        "accept": "text/html, */*",
+        "user-agent": "WarframeRivenSniperPrototype/0.1"
+      }
+    });
+    if (!response.ok) throw new Error(`Riven.market returned ${response.status}`);
+    return response.text();
+  } catch (error) {
+    if (error.name === "AbortError") throw new Error(`Riven.market timed out after ${timeoutMs}ms`);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function rivenMarketBlocks(html = "") {
+  const blocks = [];
+  const marker = /<div class="riven\b[^"]*"[\s\S]*?>/gi;
+  const matches = [...String(html).matchAll(marker)];
+  matches.forEach((match, index) => {
+    const start = match.index;
+    const end = matches[index + 1]?.index ?? String(html).indexOf("<div class=\"pagination\"", start + 1);
+    blocks.push(String(html).slice(start, end > start ? end : undefined));
+  });
+  return blocks;
+}
+
+function rivenMarketStatus(block = "") {
+  const onlineMatch = block.match(/<div class="attribute online ([^"]*)"/i);
+  const statusClass = onlineMatch ? onlineMatch[1] : "";
+  if (statusClass.includes("offline")) return "offline";
+  return statusClass.includes("ingame") || block.includes("attribute online") ? "online" : "offline";
+}
+
+function rivenMarketSeller(block = "") {
+  const match = block.match(/<div class="attribute seller[^"]*">([\s\S]*?)<\/div>/i);
+  const text = stripHtml(match?.[1] || "");
+  return text.replace(/\([A-Z0-9]+\)$/i, "").trim() || "Unknown";
+}
+
+function normalizeRivenMarketBlock(block = "") {
+  const weapon = rivenMarketFamilyFromWeaponName(attrValue(block, "data-weapon"));
+  const name = attrValue(block, "data-name") || "Riven";
+  const user = attrValue(block, "data-user");
+  const price = attrValue(block, "data-price") || "0";
+  const attributes = [];
+
+  [1, 2, 3, 4].forEach(index => {
+    const stat = attrValue(block, `data-stat${index}`);
+    if (!stat) return;
+    const value = Number(attrValue(block, `data-stat${index}val`));
+    attributes.push({
+      key: appStatKeyFromRivenMarket(stat),
+      marketKey: stat,
+      value: Number.isFinite(value) ? value : 0,
+      positive: index < 4
+    });
+  });
+
+  const listingId = block.match(/id="price_(\d+)"/i)?.[1] || "";
+  const id = listingId ? `riven-market-${listingId}` : `riven-market-${user}-${weapon}-${name}-${price}-${attributes.map(attr => `${attr.marketKey}:${attr.value}`).join("|")}`;
+  return {
+    id,
+    source: "riven.market",
+    marketUrl: "https://riven.market/list/ALL",
+    weapon,
+    title: `${weapon} ${name}`.trim(),
+    rivenName: `${weapon} ${name}`.trim(),
+    attributes,
+    statsEn: attributes.map(attr => `${attr.positive ? "+" : "-"}${attr.key}`).join(", "),
+    statsZh: attributes.map(attr => `${attr.positive ? "+" : "-"}${attr.key}`).join(", "),
+    price: `${price}p`,
+    sellerName: rivenMarketSeller(block),
+    status: rivenMarketStatus(block),
+    time: attrValue(block, "data-age") || "",
+    polarity: attrValue(block, "data-polarity") || "",
+    mastery: Number(attrValue(block, "data-mr")) || null,
+    rank: Number(attrValue(block, "data-rank")) || null,
+    rerolls: Number(attrValue(block, "data-rerolls")) || null
+  };
+}
+
+async function fetchRivenMarketHitsForWeapon(weapon, {
+  scope = "online",
+  fetchImpl = fetch
+} = {}) {
+  const html = await readTextWithTimeout(rivenMarketSearchUrlForWeapon(weapon), { fetchImpl });
+  return rivenMarketBlocks(html)
+    .map(normalizeRivenMarketBlock)
+    .filter(hit => scope === "all" || hit.status === "online");
 }
 
 function backoffDelayMs(attempt, baseMs = MARKET_RATE_LIMIT_BACKOFF_MS) {
@@ -384,7 +598,7 @@ function cacheMeta({
 } = {}) {
   const cacheAgeMs = cached ? Date.now() - cached.refreshedAt : 0;
   return {
-    source: "warframe.market",
+    source: "warframe.market + riven.market",
     status,
     rateLimited: status === "rate_limited",
     refreshIntervalMs,
@@ -431,6 +645,34 @@ async function fetchCachedMarketHitsForWeapon(group, {
   return { hits, searched: true, cached: false };
 }
 
+async function fetchCachedRivenMarketHitsForWeapon(group, {
+  scope,
+  force,
+  fetchImpl,
+  cacheNamespace,
+  refreshIntervalMs
+}) {
+  const key = weaponCacheKey({ weaponUrlName: group.weaponUrlName, scope, namespace: `${cacheNamespace}:riven.market` });
+  const cached = weaponCache.get(key);
+  const now = Date.now();
+  if (!force && cached && now - cached.refreshedAt < refreshIntervalMs) {
+    return { hits: cached.data.map(cloneHit), searched: false, cached: true, error: "" };
+  }
+
+  try {
+    const hits = await fetchRivenMarketHitsForWeapon(group.weapon, { scope, fetchImpl });
+    weaponCache.set(key, { data: hits.map(cloneHit), refreshedAt: now });
+    return { hits, searched: true, cached: false, error: "" };
+  } catch (error) {
+    return {
+      hits: cached ? cached.data.map(cloneHit) : [],
+      searched: false,
+      cached: Boolean(cached),
+      error: error.message || "Riven.market unavailable"
+    };
+  }
+}
+
 export async function fetchLiveHitsForRivens(rivens, {
   scope = "online",
   force = false,
@@ -448,7 +690,7 @@ export async function fetchLiveHitsForRivens(rivens, {
     return {
       data: [],
       meta: {
-        source: "warframe.market",
+        source: "warframe.market + riven.market",
         refreshIntervalMs: resolvedRefreshIntervalMs,
         cacheAgeMs: 0,
         nextRefreshInMs: resolvedRefreshIntervalMs,
@@ -484,6 +726,8 @@ export async function fetchLiveHitsForRivens(rivens, {
 
   const data = [];
   let weaponsSearched = 0;
+  let rivenMarketSearched = 0;
+  const sourceErrors = [];
   try {
     for (const group of groups) {
       const weaponResult = await fetchCachedMarketHitsForWeapon(group, {
@@ -498,8 +742,18 @@ export async function fetchLiveHitsForRivens(rivens, {
         refreshIntervalMs: resolvedRefreshIntervalMs
       });
       if (weaponResult.searched) weaponsSearched += 1;
+      const rivenMarketResult = await fetchCachedRivenMarketHitsForWeapon(group, {
+        scope,
+        force: force && !forceLimited,
+        fetchImpl,
+        cacheNamespace,
+        refreshIntervalMs: resolvedRefreshIntervalMs
+      });
+      if (rivenMarketResult.searched) rivenMarketSearched += 1;
+      if (rivenMarketResult.error) sourceErrors.push(rivenMarketResult.error);
+      const groupHits = [...weaponResult.hits, ...rivenMarketResult.hits];
       for (const riven of group.rivens) {
-        const matches = weaponResult.hits
+        const matches = groupHits
           .filter(hit => marketHitMatchesRiven(hit, riven))
           .slice(0, Math.max(1, Math.min(Number(limitPerRiven) || 50, 100)));
         data.push(...matches.map(hit => ({ ...hit, rivenId: riven.id })));
@@ -526,21 +780,30 @@ export async function fetchLiveHitsForRivens(rivens, {
     }
     throw error;
   }
-  cache.set(key, { data, refreshedAt: now, weaponsSearched });
+  cache.set(key, { data, refreshedAt: now, weaponsSearched: weaponsSearched + rivenMarketSearched });
 
   return {
     data: data.map(cloneHit),
-    meta: cacheMeta({
-      status: weaponsSearched ? "fresh" : "cached",
-      cached: { refreshedAt: now },
-      refreshIntervalMs: resolvedRefreshIntervalMs,
-      nextRefreshInMs: resolvedRefreshIntervalMs,
-      weaponsSearched,
-      rivensSearched: rivens.length,
-      groups,
-      rateLimitBackoffMs,
-      forceLimited
-    })
+    meta: {
+      ...cacheMeta({
+        status: (weaponsSearched + rivenMarketSearched) ? "fresh" : "cached",
+        cached: { refreshedAt: now },
+        refreshIntervalMs: resolvedRefreshIntervalMs,
+        nextRefreshInMs: resolvedRefreshIntervalMs,
+        weaponsSearched: weaponsSearched + rivenMarketSearched,
+        rivensSearched: rivens.length,
+        groups,
+        rateLimitBackoffMs,
+        forceLimited
+      }),
+      sources: {
+        "warframe.market": { searchedWeapons: weaponsSearched },
+        "riven.market": {
+          searchedWeapons: rivenMarketSearched,
+          errors: [...new Set(sourceErrors)].slice(0, 3)
+        }
+      }
+    }
   };
 }
 

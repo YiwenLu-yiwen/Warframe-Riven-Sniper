@@ -912,6 +912,18 @@
       flex: 0 0 auto;
     }
 
+    .source-tag {
+      border: 1px solid rgba(121,186,195,.38);
+      color: var(--blue);
+      border-radius: 999px;
+      padding: 1px 6px;
+      font-size: 10px;
+      line-height: 1.35;
+      font-weight: 850;
+      letter-spacing: .02em;
+      flex: 0 0 auto;
+    }
+
     .listing-grade {
       border: 1px solid var(--line);
       border-radius: 999px;
@@ -2257,6 +2269,12 @@
       return title.replace(new RegExp(`^${escapedWeapon}\\b`, "i"), displayWeapon);
     }
 
+    function hitSourceLabel(hit) {
+      if (hit.source === "riven.market") return "RM";
+      if (hit.source === "warframe.market") return "WM";
+      return "";
+    }
+
     function applyRivenWeaponMeta(riven) {
       const weapon = riven?.weapon;
       if (!weapon?.family) return;
@@ -2720,6 +2738,7 @@
           <div class="cell">
             <div class="listing-title">
               <strong title="${escapeHtml(hit.title || hit.rivenName || "")}">${escapeHtml(displayHitTitle(hit))}</strong>
+              ${hitSourceLabel(hit) ? `<span class="source-tag" title="${escapeHtml(hit.source)}">${escapeHtml(hitSourceLabel(hit))}</span>` : ""}
               ${renderListingGradeBadges(hit)}
             </div>
             ${renderStatChips(hit)}
@@ -3264,26 +3283,27 @@
     function updateSourceStatus() {
       const node = document.querySelector("#sourceStatus");
       if (!node) return;
+      const sourceLabel = marketMeta.source || "warframe.market + riven.market";
       node.classList.remove("market-waiting", "market-error");
       if (!activeRiven()) {
-        node.textContent = `0 ${t("listingCount")} • warframe.market • ${refreshEveryText()}`;
+        node.textContent = `0 ${t("listingCount")} • ${sourceLabel} • ${refreshEveryText()}`;
         return;
       }
       const remaining = refreshSecondsRemaining();
       if (marketMeta.status === "rate_limited") {
         node.classList.add("market-waiting");
-        node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${t("rateLimited")} ${remaining}s`;
+        node.textContent = `${visibleHitCount} ${t("listingCount")} • ${sourceLabel} • ${t("rateLimited")} ${remaining}s`;
         return;
       }
       if (marketMeta.status === "unavailable") {
         node.classList.add("market-error");
-        node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${t("marketUnavailable")} ${remaining}s`;
+        node.textContent = `${visibleHitCount} ${t("listingCount")} • ${sourceLabel} • ${t("marketUnavailable")} ${remaining}s`;
         return;
       }
       const scopeLabel = onlineOnly
         ? (lang === "zh" ? "在线" : "online")
         : (lang === "zh" ? "全部" : "all");
-      node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${scopeLabel} • ${remaining}s`;
+      node.textContent = `${visibleHitCount} ${t("listingCount")} • ${sourceLabel} • ${scopeLabel} • ${remaining}s`;
     }
 
     function updateRelativeTimes() {
@@ -3313,7 +3333,16 @@
 
     function hitTimestamp(hit) {
       const time = Date.parse(hit.time);
-      return Number.isFinite(time) ? time : 0;
+      if (Number.isFinite(time)) return time;
+      const text = String(hit.time || "").toLowerCase();
+      if (text === "new") return Date.now();
+      const amount = Number(text.replace(/[^\d.]/g, ""));
+      if (!Number.isFinite(amount)) return 0;
+      if (text.includes("month")) return Date.now() - amount * 30 * 24 * 60 * 60 * 1000;
+      if (text.includes("day")) return Date.now() - amount * 24 * 60 * 60 * 1000;
+      if (text.includes("hour")) return Date.now() - amount * 60 * 60 * 1000;
+      if (text.includes("minute")) return Date.now() - amount * 60 * 1000;
+      return 0;
     }
 
     function renderHitHeaderRow(rowClass = "hit-line") {

@@ -99,6 +99,6 @@ export async function health() {
     rivens: rivens.length,
     onlineHits: 0,
     refreshIntervalMs: MARKET_REFRESH_INTERVAL_MS,
-    source: "warframe.market, warframe wiki, warframestat.us"
+    source: "warframe.market, riven.market, warframe wiki, warframestat.us"
   };
 }
