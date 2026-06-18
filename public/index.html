@@ -1,0 +1,2323 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Warframe 裂罅狙击 v1.0</title>
+  <style>
+    :root {
+      --bg: #12100c;
+      --panel: #1d1a14;
+      --panel-2: #252117;
+      --line: #423a2b;
+      --text: #f4ead6;
+      --muted: #b1a48a;
+      --faint: #746954;
+      --accent: #d6a84c;
+      --blue: #78b7bd;
+      --green: #8fbd69;
+      --red: #d26b56;
+      --hit-grid: minmax(450px, 1fr) 108px minmax(168px, .32fr) 92px 92px;
+      font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    html[lang="zh-Hans"] {
+      font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    button, input, select {
+      font: inherit;
+      color: inherit;
+    }
+
+    button { cursor: pointer; }
+
+    input, select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      background: #0e0c09;
+      border-radius: 4px;
+      padding: 9px 10px;
+    }
+
+    input[type="search"] {
+      appearance: none;
+    }
+
+    .generated-name {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      background: #0e0c09;
+      border-radius: 4px;
+      padding: 9px 10px;
+      display: flex;
+      align-items: center;
+      color: var(--text);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #15120e;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #0e0c09;
+    }
+
+    .brand-copy {
+      min-width: 0;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    h1 {
+      font-size: 18px;
+      letter-spacing: .01em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .version-pill {
+      flex: 0 0 auto;
+      border: 1px solid rgba(214, 168, 76, .55);
+      border-radius: 999px;
+      padding: 2px 7px 3px;
+      color: #0e0c09;
+      background: var(--accent);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .sub {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .smart-search {
+      display: grid;
+      gap: 4px;
+    }
+
+    .smart-search input {
+      padding-left: 34px;
+      background:
+        radial-gradient(circle at 15px 19px, transparent 0 4px, var(--faint) 4px 5px, transparent 5px),
+        linear-gradient(45deg, transparent 0 52%, var(--faint) 52% 59%, transparent 59%) 22px 24px / 10px 10px no-repeat,
+        #0e0c09;
+    }
+
+    .search-help {
+      min-height: 14px;
+      color: var(--faint);
+      font-size: 12px;
+      padding-left: 2px;
+    }
+
+    .seg {
+      display: inline-grid;
+      grid-auto-flow: column;
+      border: 1px solid var(--line);
+      background: #0e0c09;
+    }
+
+    .seg button {
+      border: 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      min-height: 40px;
+      padding: 9px 12px;
+    }
+
+    .seg button:last-child { border-right: 0; }
+
+    .seg button[aria-pressed="true"] {
+      background: var(--accent);
+      color: #171208;
+    }
+
+    .primary,
+    .ghost,
+    .danger {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      border-radius: 4px;
+      min-height: 40px;
+      padding: 9px 12px;
+    }
+
+    .primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #171208;
+    }
+
+    .danger {
+      border-color: rgba(210,107,86,.75);
+      color: #ffd8cf;
+      background: rgba(210,107,86,.12);
+    }
+
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #17140f;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 11px 12px;
+      min-height: 68px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+    }
+
+    html[lang="zh-Hans"] .metric span {
+      letter-spacing: .04em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+    }
+
+    .metric-button {
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .metric-button:hover {
+      border-color: var(--accent);
+    }
+
+    .metric-button:focus-visible,
+    .copy-button:focus-visible,
+    .weapon-route:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      min-height: 0;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      min-width: 0;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--accent);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .section-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .sort-header {
+      display: inline-grid;
+      grid-template-columns: auto 12px;
+      align-items: center;
+      gap: 4px;
+      width: auto;
+      min-height: 28px;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sort-header:hover {
+      color: var(--accent);
+    }
+
+    .sort-glyph {
+      display: inline-grid;
+      place-items: center;
+      width: 12px;
+      height: 14px;
+      color: var(--faint);
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .sort-header[aria-pressed="true"] .sort-glyph {
+      color: var(--accent);
+    }
+
+    html[lang="zh-Hans"] .section-head {
+      letter-spacing: .04em;
+    }
+
+    .count {
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .count.market-waiting {
+      color: var(--accent);
+    }
+
+    .count.market-error {
+      color: var(--red);
+    }
+
+    .riven-list {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - 240px);
+      overflow: auto;
+    }
+
+    .weapon-group {
+      border: 1px solid var(--line);
+      background: #18150f;
+    }
+
+    .weapon-group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 38px;
+      padding: 9px 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .weapon-group-head strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+    }
+
+    .weapon-group-head span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .weapon-rivens {
+      display: grid;
+      gap: 6px;
+      padding: 7px;
+    }
+
+    .riven-item {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #211e17;
+      color: var(--text);
+      text-align: left;
+      padding: 10px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .riven-item[aria-pressed="true"] {
+      border-color: var(--accent);
+      box-shadow: inset 4px 0 0 var(--accent);
+      background: #302819;
+    }
+
+    .riven-item strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .riven-item small {
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .riven-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .side-actions {
+      padding: 12px;
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      min-width: 0;
+    }
+
+    .editor {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: span 3; }
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-12 { grid-column: span 12; }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.3;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .negative-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .combo {
+      position: relative;
+      min-width: 0;
+    }
+
+    .combo input {
+      padding-right: 38px;
+    }
+
+    .combo::after {
+      content: "";
+      position: absolute;
+      right: 13px;
+      top: 17px;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--muted);
+      pointer-events: none;
+    }
+
+    .combo-menu {
+      position: absolute;
+      inset-inline: 0;
+      top: calc(100% + 4px);
+      z-index: 30;
+      max-height: 240px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #11100c;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+    }
+
+    .combo-menu[hidden] {
+      display: none;
+    }
+
+    .combo-option {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid rgba(66,58,43,.7);
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      min-height: 38px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .combo-option:last-child { border-bottom: 0; }
+
+    .combo-option:hover,
+    .combo-option[aria-selected="true"] {
+      background: #302819;
+      color: var(--accent);
+    }
+
+    .combo-option small {
+      color: var(--faint);
+      white-space: nowrap;
+    }
+
+    .detail-section {
+      grid-column: span 12;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .market-details {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .polarity-option {
+      font-family: inherit;
+    }
+
+    .editor-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: end;
+    }
+
+    .hint {
+      border-top: 1px solid var(--line);
+      padding: 11px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .inbox {
+      overflow: auto;
+    }
+
+    .table {
+      min-width: 980px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: var(--hit-grid);
+      border-top: 1px solid var(--line);
+      align-items: center;
+    }
+
+    .row:first-child { border-top: 0; }
+
+    .row.head {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .045em;
+      font-size: 12px;
+      background: #15120e;
+    }
+
+    .cell {
+      padding: 11px 12px;
+      border-right: 1px solid var(--line);
+      min-height: 54px;
+      display: grid;
+      align-content: center;
+    }
+
+    .cell:last-child { border-right: 0; }
+
+    .cell small {
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .listing-title {
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+      min-width: 0;
+    }
+
+    .listing-title strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .listing-title small {
+      margin-top: 0;
+      flex: 0 0 auto;
+    }
+
+    .stat-chips {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 5px;
+      margin-top: 7px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .stat-chip {
+      border: 1px solid rgba(143,189,105,.36);
+      background: rgba(143,189,105,.08);
+      color: var(--green);
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-size: 12px;
+      line-height: 1.35;
+      white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stat-chip.negative {
+      border-color: rgba(210,107,86,.4);
+      background: rgba(210,107,86,.09);
+      color: var(--red);
+    }
+
+    .online { color: var(--green); }
+    .offline { color: var(--faint); text-decoration: line-through; }
+
+    .seller-name {
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .price-cell,
+    .time-cell {
+      white-space: nowrap;
+    }
+
+    .seller-cell {
+      gap: 4px;
+      align-items: start;
+    }
+
+    .status-pill {
+      width: max-content;
+      border: 1px solid rgba(143,189,105,.45);
+      border-radius: 999px;
+      color: var(--green);
+      padding: 2px 7px;
+      font-size: 12px;
+      line-height: 1.2;
+      text-decoration: none;
+    }
+
+    .status-pill.offline {
+      border-color: rgba(116,105,84,.55);
+      color: var(--faint);
+      text-decoration: none;
+    }
+
+    .copy-button {
+      border: 1px solid var(--line);
+      background: #0e0c09;
+      border-radius: 4px;
+      min-height: 32px;
+      padding: 6px 8px;
+      color: var(--text);
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .copy-button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .empty {
+      padding: 30px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid var(--line);
+    }
+
+    .app-footer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 42px;
+      padding: 10px 18px;
+      border-top: 1px solid var(--line);
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: rgba(7,6,4,.72);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .modal[hidden] {
+      display: none;
+    }
+
+    .modal-panel {
+      width: min(860px, 100%);
+      max-height: min(780px, calc(100vh - 48px));
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #1a1711;
+      box-shadow: 0 20px 70px rgba(0,0,0,.45);
+    }
+
+    .modal-panel.wide-panel {
+      width: min(1240px, calc(100vw - 48px));
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .modal-tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .modal-tools select {
+      min-height: 36px;
+      width: auto;
+      min-width: 150px;
+      padding: 7px 9px;
+    }
+
+    .modal-head h2 {
+      font-size: 18px;
+    }
+
+    .modal-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      border-top: 1px solid var(--line);
+      padding: 14px;
+    }
+
+    .hit-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .hit-stack.table-like {
+      gap: 0;
+      min-width: 980px;
+      border: 1px solid var(--line);
+      background: #15120e;
+    }
+
+    .hit-line {
+      border: 1px solid var(--line);
+      background: #15120e;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: var(--hit-grid);
+      gap: 10px;
+      align-items: center;
+    }
+
+    .hit-stack.table-like .hit-line {
+      border: 0;
+      border-top: 1px solid var(--line);
+      background: transparent;
+    }
+
+    .hit-stack.table-like .hit-line:first-child {
+      border-top: 0;
+    }
+
+    .hit-line.head {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .045em;
+      font-size: 12px;
+      min-height: 42px;
+      padding-block: 8px;
+    }
+
+    .hit-line strong,
+    .hit-line span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .weapon-route {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #15120e;
+      color: inherit;
+      padding: 11px 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 12px;
+      align-items: center;
+      text-align: left;
+    }
+
+    .weapon-route strong {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .weapon-route span {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .weapon-route:hover {
+      border-color: var(--accent);
+    }
+
+    @media (max-width: 1050px) {
+      .topbar,
+      .layout,
+      .search-row {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
+      .metrics-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .span-2, .span-3, .span-4, .span-5, .span-6, .span-12 { grid-column: span 12; }
+      .editor, .modal-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+      .market-details, .stat-grid { grid-template-columns: 1fr; }
+      .hit-line { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .metrics-bar,
+      .side-actions,
+      .editor-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-logo" src="/assets/logo.svg" alt="" aria-hidden="true">
+        <div class="brand-copy">
+          <div class="brand-title">
+            <h1 data-i18n="title">裂罅狙击</h1>
+            <span class="version-pill">v1.0</span>
+          </div>
+        </div>
+      </div>
+      <div class="search-row">
+        <div class="smart-search">
+          <input id="search" type="search" aria-label="智能搜索" placeholder="搜索武器、词条、卖家、价格、时间">
+          <span class="search-help" id="searchHelp" data-i18n="searchHelp">试试：暴击伤害、卖家名、&lt;450p、在线</span>
+        </div>
+        <div class="seg" aria-label="Seller scope">
+          <button id="onlineOnly" aria-pressed="true" data-i18n="onlineOnly">只看在线</button>
+          <button id="includeOffline" aria-pressed="false" data-i18n="includeOffline">包含离线</button>
+        </div>
+        <div class="seg" aria-label="Language">
+          <button data-lang="en" aria-pressed="false">EN</button>
+          <button data-lang="zh" aria-pressed="true">中文</button>
+        </div>
+      </div>
+      <button class="primary" id="addTop" data-i18n="addRiven">新增裂罅</button>
+    </header>
+
+    <section class="metrics-bar" aria-label="狙击状态">
+      <button class="metric metric-button" id="activeRivensCard" type="button"><span data-i18n="activeRivens">启用裂罅</span><strong id="activeMetric">0</strong></button>
+      <button class="metric metric-button" id="onlineHitsCard" type="button"><span data-i18n="onlineHits">在线命中</span><strong id="hitMetric">0</strong></button>
+      <button class="metric metric-button" id="weaponsCard" type="button"><span data-i18n="weaponsTracked">武器数</span><strong id="weaponMetric">0</strong></button>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="section-head">
+          <span data-i18n="rivens">裂罅</span>
+          <span class="count" id="rivenCount">0</span>
+        </div>
+        <div class="riven-list" id="rivenList"></div>
+        <div class="side-actions">
+          <button class="primary" id="addSide" data-i18n="add">新增</button>
+          <button class="danger" id="deleteSide" data-i18n="delete">删除</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="card inbox" aria-label="网页命中">
+          <div class="section-head">
+            <span data-i18n="webHits">网页命中</span>
+            <div class="section-tools">
+              <span class="count" id="sourceStatus">0 条订单</span>
+            </div>
+          </div>
+          <div class="table">
+            <div class="row head">
+              <div class="cell" data-i18n="listing">订单</div>
+              <div class="cell">
+                <button class="sort-header" id="priceSort" type="button" aria-pressed="true" data-sort-control="price">
+                  <span data-i18n="price">价格</span>
+                  <span class="sort-glyph" aria-hidden="true">↑</span>
+                </button>
+              </div>
+              <div class="cell" data-i18n="seller">卖家</div>
+              <div class="cell">
+                <button class="sort-header" id="timeSort" type="button" aria-pressed="false" data-sort-control="time">
+                  <span data-i18n="time">时间</span>
+                  <span class="sort-glyph" aria-hidden="true">↕</span>
+                </button>
+              </div>
+              <div class="cell" data-i18n="copy">消息</div>
+            </div>
+            <div id="hits"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <footer class="app-footer">Warframe Riven Sniper v1.0 · MIT License · 2026</footer>
+  </div>
+
+  <div class="modal" id="addModal" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="modalTitle" data-i18n="createRiven">创建裂罅</h2>
+          <p class="sub" data-i18n="createHint">选择武器和词条；裂罅名称会根据正面词条自动生成。</p>
+        </div>
+        <button class="ghost" id="closeModal" data-i18n="close">关闭</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div class="field span-6">
+            <label for="modalTarget" data-i18n="target">武器名称</label>
+            <div class="combo">
+              <input id="modalTarget" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="weaponMenu" autocomplete="off">
+              <div class="combo-menu" id="weaponMenu" role="listbox" hidden></div>
+            </div>
+          </div>
+          <div class="field span-3">
+            <label for="modalPrice" data-i18n="maxPrice">最高价</label>
+            <input id="modalPrice" value="450p">
+          </div>
+
+          <div class="field span-12">
+            <label data-i18n="positiveAttrs" id="positiveLabel">正面词条</label>
+            <div class="stat-grid">
+              <select id="modalPositive1"></select>
+              <select id="modalPositive2"></select>
+              <select id="modalPositive3"></select>
+            </div>
+          </div>
+
+          <div class="field span-12">
+            <label data-i18n="negativeAttr" id="negativeLabel">负面词条</label>
+            <select id="modalNegative"></select>
+          </div>
+          <div class="field detail-section">
+            <div class="market-details">
+              <div class="field">
+                <label for="modalPolarity" data-i18n="polarity">极性</label>
+                <select id="modalPolarity">
+                  <option value="Any">Any</option>
+                  <option value="Madurai">V Madurai</option>
+                  <option value="Vazarin">D Vazarin</option>
+                  <option value="Naramon">Dash Naramon</option>
+                  <option value="Zenurik">Bar Zenurik</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="modalMastery" data-i18n="mastery">段位</label>
+                <input id="modalMastery" value="14" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="modalRank" data-i18n="rank">等级</label>
+                <select id="modalRank">
+                  <option>Rank 8</option>
+                  <option>Rank 7</option>
+                  <option>Rank 6</option>
+                  <option>Rank 0</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="modalRerolls" data-i18n="rerolls">循环</label>
+                <input id="modalRerolls" value="0" inputmode="numeric">
+              </div>
+            </div>
+          </div>
+          <div class="field span-12">
+            <label for="modalName" data-i18n="rivenName">裂罅名称</label>
+            <div class="generated-name" id="modalName" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="ghost" id="cancelModal" data-i18n="cancel">取消</button>
+        <button class="primary" id="createModal" data-i18n="create">创建</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="hitsModal" hidden>
+    <section class="modal-panel wide-panel" role="dialog" aria-modal="true" aria-labelledby="hitsModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="hitsModalTitle" data-i18n="allOnlineHits">全部在线命中</h2>
+          <p class="sub" id="hitsModalCount">0 条订单</p>
+        </div>
+        <div class="modal-tools">
+          <button class="ghost" id="closeHitsModal" data-i18n="close">关闭</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="hit-stack table-like" id="allHitsList"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal" id="weaponsModal" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="weaponsModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="weaponsModalTitle" data-i18n="trackedWeapons">已追踪武器</h2>
+          <p class="sub" id="weaponsModalCount">0 件武器</p>
+        </div>
+        <button class="ghost" id="closeWeaponsModal" data-i18n="close">关闭</button>
+      </div>
+      <div class="modal-body">
+        <div class="hit-stack" id="weaponRoutes"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const dictionary = {
+      en: {
+        title: "Riven Sniper",
+        onlineOnly: "Online only",
+        includeOffline: "Include offline",
+        searchHelp: "Try: crit damage, seller name, <450p, online",
+        addRiven: "Add Riven",
+        add: "Add",
+        delete: "Delete",
+        rivens: "Rivens",
+        activeRivens: "Active Rivens",
+        onlineHits: "Online Hits",
+        allOnlineHits: "All Online Hits",
+        weaponsTracked: "Weapons",
+        trackedWeapons: "Tracked Weapons",
+        rivenName: "Riven name",
+        maxPrice: "Max price",
+        target: "Weapon name",
+        positiveAttrs: "Positive attributes",
+        negativeAttr: "Negative attribute",
+        polarity: "Polarity",
+        mastery: "Mastery",
+        rank: "Rank",
+        rerolls: "Re-rolls",
+        webHits: "Web Hits",
+        riven: "Riven",
+        listing: "Listing",
+        listingCount: "listings",
+        statScope: "Stat pool",
+        price: "Price",
+        seller: "Seller",
+        time: "Time",
+        copy: "Messages",
+        copyAction: "Copy",
+        copied: "Copied",
+        priceLowHigh: "Price low to high",
+        priceHighLow: "Price high to low",
+        timeNewest: "Newest first",
+        timeOldest: "Oldest first",
+        weaponRouteHint: "Click a weapon to filter Rivens",
+        noHits: "No web hits for this Riven yet.",
+        noRivens: "Add a Riven to start live sniping.",
+        refreshing: "Refreshing live market data...",
+        rateLimited: "rate limited, waiting",
+        marketUnavailable: "market unavailable, retrying",
+        refreshEvery: "refreshes every 2 min",
+        weapon: "Weapon",
+        rivenUnit: "Riven",
+        rivenUnits: "Rivens",
+        createRiven: "Create Riven",
+        createHint: "Choose a weapon and stats; the Riven name is generated from positive attributes.",
+        close: "Close",
+        cancel: "Cancel",
+        create: "Create"
+      },
+      zh: {
+        title: "裂罅狙击",
+        onlineOnly: "只看在线",
+        includeOffline: "包含离线",
+        searchHelp: "试试：暴击伤害、卖家名、<450p、在线",
+        addRiven: "新增裂罅",
+        add: "新增",
+        delete: "删除",
+        rivens: "裂罅",
+        activeRivens: "启用裂罅",
+        onlineHits: "在线命中",
+        allOnlineHits: "全部在线命中",
+        weaponsTracked: "武器数",
+        trackedWeapons: "已追踪武器",
+        rivenName: "裂罅名称",
+        maxPrice: "最高价",
+        target: "武器名称",
+        positiveAttrs: "正面词条",
+        negativeAttr: "负面词条",
+        polarity: "极性",
+        mastery: "段位",
+        rank: "等级",
+        rerolls: "循环",
+        webHits: "网页命中",
+        riven: "裂罅",
+        listing: "订单",
+        listingCount: "条订单",
+        statScope: "词条池",
+        price: "价格",
+        seller: "卖家",
+        time: "时间",
+        copy: "消息",
+        copyAction: "复制",
+        copied: "已复制",
+        priceLowHigh: "价格从低到高",
+        priceHighLow: "价格从高到低",
+        timeNewest: "时间最新优先",
+        timeOldest: "时间最早优先",
+        weaponRouteHint: "点击武器筛选裂罅",
+        noHits: "当前裂罅暂无网页命中。",
+        noRivens: "新增裂罅后开始实时狙击。",
+        refreshing: "正在刷新实时市场数据...",
+        rateLimited: "限流，等待",
+        marketUnavailable: "市场暂不可用，重试",
+        refreshEvery: "每 2 分钟刷新",
+        weapon: "武器",
+        rivenUnit: "条裂罅",
+        rivenUnits: "条裂罅",
+        createRiven: "创建裂罅",
+        createHint: "选择武器和词条；裂罅名称会根据正面词条自动生成。",
+        close: "关闭",
+        cancel: "取消",
+        create: "创建"
+      }
+    };
+
+    const statCatalog = [
+      { key: "", en: "No preference", zh: "不限定", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "additional_combo_count_chance", en: "Additional Combo Count Chance", zh: "额外连击数几率", groups: ["melee"] },
+      { key: "ammo_maximum", en: "Ammo Maximum", zh: "弹药上限", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "damage_vs_corpus", en: "Damage to Corpus", zh: "对 Corpus 伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "damage_vs_grineer", en: "Damage to Grineer", zh: "对 Grineer 伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "damage_vs_infested", en: "Damage to Infested", zh: "对 Infested 伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "cold", en: "Cold Damage", zh: "冰冻伤害", positiveOnly: true, groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "combo_duration", en: "Combo Duration", zh: "连击持续时间", groups: ["melee"] },
+      { key: "critical_chance", en: "Critical Chance", zh: "暴击几率", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "critical_chance_slide", en: "Critical Chance on Slide Attack", zh: "滑行攻击暴击几率", groups: ["melee"] },
+      { key: "critical_damage", en: "Critical Damage", zh: "暴击伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "damage", en: "Base Damage", zh: "基础伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "electricity", en: "Electricity Damage", zh: "电击伤害", positiveOnly: true, groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "heat", en: "Heat Damage", zh: "火焰伤害", positiveOnly: true, groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "finisher_damage", en: "Finisher Damage", zh: "处决伤害", groups: ["melee"] },
+      { key: "fire_rate", en: "Fire Rate / Attack Speed", zh: "射速 / 攻击速度", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "projectile_speed", en: "Projectile Speed", zh: "投射物速度", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "heavy_attack_efficiency", en: "Heavy Attack Efficiency", zh: "重击效率", groups: ["melee"] },
+      { key: "impact", en: "Impact Damage", zh: "冲击伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "initial_combo", en: "Initial Combo", zh: "初始连击", groups: ["melee"] },
+      { key: "magazine_capacity", en: "Magazine Capacity", zh: "弹匣容量", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "multishot", en: "Multishot", zh: "多重射击", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "toxin", en: "Toxin Damage", zh: "毒素伤害", positiveOnly: true, groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "punch_through", en: "Punch Through", zh: "穿透", positiveOnly: true, groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "puncture", en: "Puncture Damage", zh: "穿刺伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "reload_speed", en: "Reload Speed", zh: "装填速度", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "range", en: "Range", zh: "范围", groups: ["melee"] },
+      { key: "slash", en: "Slash Damage", zh: "切割伤害", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "status_chance", en: "Status Chance", zh: "触发几率", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "status_duration", en: "Status Duration", zh: "触发时间", groups: ["rifle", "shotgun", "pistol", "melee", "archgun", "robotic"] },
+      { key: "recoil", en: "Recoil", zh: "后坐力", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] },
+      { key: "zoom", en: "Zoom", zh: "变焦", groups: ["rifle", "shotgun", "pistol", "archgun", "robotic"] }
+    ];
+
+    const weaponMeta = {
+      Rubico: { zh: "绝路", group: "rifle" },
+      Latron: { zh: "拉特昂", group: "rifle" },
+      Soma: { zh: "月神", group: "rifle" },
+      Braton: { zh: "布莱顿", group: "rifle" },
+      Boltor: { zh: "螺钉步枪", group: "rifle" },
+      Vectis: { zh: "守望者", group: "rifle" },
+      Strun: { zh: "斯特朗", group: "shotgun" },
+      Boar: { zh: "野猪", group: "shotgun" },
+      Hek: { zh: "海克", group: "shotgun" },
+      Tigris: { zh: "猛虎", group: "shotgun" },
+      Lex: { zh: "雷克斯", group: "pistol" },
+      Vasto: { zh: "瓦斯托", group: "pistol" },
+      Furis: { zh: "盗贼", group: "pistol" },
+      Atomos: { zh: "原子矿融炮", group: "pistol" },
+      Skana: { zh: "空刃", group: "melee" },
+      Nikana: { zh: "侍刃", group: "melee" },
+      Galatine: { zh: "迦伦提恩", group: "melee" },
+      Gram: { zh: "格拉姆", group: "melee" },
+      Orthos: { zh: "欧特鲁斯", group: "melee" },
+      Imperator: { zh: "凯旋将军", group: "archgun" },
+      Velocitus: { zh: "极速电磁步枪", group: "archgun" },
+      Veritux: { zh: "真理巨剑", group: "archmelee" },
+      Artax: { zh: "阿塔克斯", group: "robotic" },
+      Cryotra: { zh: "冰冻光束枪", group: "robotic" }
+    };
+
+    const catalogWeaponFamilies = Object.keys(weaponMeta).sort((a, b) => a.localeCompare(b));
+
+    const rivenNameParts = {
+      additional_combo_count_chance: ["Laci", "Nus"],
+      ammo_maximum: ["Ampi", "Bin"],
+      damage_vs_corpus: ["Manti", "Tron"],
+      damage_vs_grineer: ["Argi", "Con"],
+      damage_vs_infested: ["Pura", "Ada"],
+      critical_chance: ["Crita", "Cron"],
+      critical_chance_slide: ["Pleci", "Nent"],
+      critical_damage: ["Acri", "Tis"],
+      combo_duration: ["Tempi", "Nem"],
+      damage: ["Visi", "Ata"],
+      electricity: ["Vexi", "Tio"],
+      heat: ["Igni", "Pha"],
+      finisher_damage: ["Exi", "Cta"],
+      fire_rate: ["Croni", "Dra"],
+      attack_speed: ["Croni", "Dra"],
+      projectile_speed: ["Conci", "Nak"],
+      cold: ["Geli", "Do"],
+      heavy_attack_efficiency: ["Forti", "Us"],
+      impact: ["Magna", "Ton"],
+      initial_combo: ["Para", "Um"],
+      magazine_capacity: ["Arma", "Tin"],
+      multishot: ["Sati", "Can"],
+      toxin: ["Toxi", "Tox"],
+      punch_through: ["Lexi", "Nok"],
+      puncture: ["Insi", "Cak"],
+      reload_speed: ["Feva", "Tak"],
+      range: ["Locti", "Tor"],
+      slash: ["Sci", "Sus"],
+      status_chance: ["Hexa", "Dex"],
+      status_duration: ["Deci", "Des"],
+      recoil: ["Zeti", "Mag"],
+      zoom: ["Hera", "Lis"]
+    };
+
+    let lang = "zh";
+    let onlineOnly = true;
+    let selectedId = null;
+    let rivens = [];
+    let listings = [];
+    let marketMeta = { refreshIntervalMs: 120000, nextRefreshInMs: 120000 };
+    let marketMetaReceivedAt = Date.now();
+    let visibleHitCount = 0;
+    let hitSort = "priceAsc";
+    let refreshTimer = null;
+
+    function t(key) {
+      return dictionary[lang][key] || key;
+    }
+
+    function humanizeStatKey(value) {
+      return String(value || "")
+        .replace(/_\/_/g, " / ")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, letter => letter.toUpperCase());
+    }
+
+    function statLabel(value) {
+      const stat = statCatalog.find(item => item.key === value);
+      if (!stat) return humanizeStatKey(value);
+      return lang === "zh" ? stat.zh : stat.en;
+    }
+
+    function statLabelForCopy(value) {
+      const stat = statCatalog.find(item => item.key === value);
+      return stat ? stat.en : humanizeStatKey(value);
+    }
+
+    function emptyStatLabel(select) {
+      const isNegative = select.id.toLowerCase().includes("negative");
+      if (lang === "zh") return isNegative ? "不限定负面词条" : "不限定正面词条";
+      return isNegative ? "No negative preference" : "No positive preference";
+    }
+
+    function statSummary(riven) {
+      const positives = riven.positives.filter(Boolean).map(statLabel);
+      const negative = riven.negative ? `-${statLabel(riven.negative)}` : "";
+      return [...positives, negative].filter(Boolean).join(", ");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function displayGeneratedRivenName(riven) {
+      return `${displayWeaponName(riven.target)} ${generatedNameCore(riven.positives)}`;
+    }
+
+    function displayHitTitle(hit) {
+      const title = hit.title || hit.rivenName || "";
+      const weapon = rivenWeaponFamily(hit.weapon || title.split(" ")[0] || "");
+      const displayWeapon = displayWeaponName(weapon);
+      if (!title || !weapon || displayWeapon === weapon) return title;
+      const escapedWeapon = weapon.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return title.replace(new RegExp(`^${escapedWeapon}\\b`, "i"), displayWeapon);
+    }
+
+    function formatTime(value) {
+      const time = Date.parse(value);
+      if (!Number.isFinite(time)) return value || "";
+      const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+      if (seconds < 60) return `${seconds}s`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 48) return `${hours}h`;
+      return `${Math.floor(hours / 24)}d`;
+    }
+
+    function renderStatChips(hit) {
+      const attributes = hit.attributes || [];
+      if (!attributes.length) return `<small>${escapeHtml(lang === "zh" ? hit.statsZh : hit.statsEn)}</small>`;
+      const renderChip = attribute => {
+        const value = Number(attribute.value);
+        const sign = attribute.positive ? "+" : "-";
+        const amount = Number.isFinite(value) ? `${sign}${Math.abs(value).toFixed(1)}%` : sign;
+        return `<span class="stat-chip ${attribute.positive ? "positive" : "negative"}" title="${escapeHtml(`${amount} ${statLabel(attribute.key)}`)}">${escapeHtml(amount)} ${escapeHtml(statLabel(attribute.key))}</span>`;
+      };
+      return `
+        <div class="stat-chips">
+          ${attributes.map(renderChip).join("")}
+        </div>
+      `;
+    }
+
+    function rivenStatShape(hit) {
+      const attributes = hit.attributes || [];
+      if (!attributes.length) return "";
+      const positives = attributes.filter(attribute => attribute.positive).length;
+      const negatives = attributes.filter(attribute => !attribute.positive).length;
+      if (!positives && !negatives) return "";
+      return negatives ? `${positives}+${negatives}` : String(positives);
+    }
+
+    function copyStatDetails(hit) {
+      const attributes = hit.attributes || [];
+      if (!attributes.length) return hit.statsEn || "";
+      return attributes.map(attribute => {
+        const value = Number(attribute.value);
+        const sign = attribute.positive ? "+" : "-";
+        const amount = Number.isFinite(value) ? `${sign}${Math.abs(value).toFixed(1)}%` : sign;
+        return `${statLabelForCopy(attribute.key)} ${amount}`;
+      }).join(", ");
+    }
+
+    function copyListingDetails(hit) {
+      return [rivenStatShape(hit), copyStatDetails(hit)].filter(Boolean).join("; ");
+    }
+
+    function replyText(hit) {
+      const plat = String(hit.price || "").replace(/[^\d.]/g, "") || String(hit.price || "");
+      const details = copyListingDetails(hit);
+      const detailText = details ? ` (${details})` : "";
+      return `/w ${hit.sellerName} Hi, i am interested in your "${hit.rivenName || hit.title}"${detailText}, is that still available for ${plat} plat?`;
+    }
+
+    async function copyReply(button) {
+      const text = button.dataset.reply || "";
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+      }
+      button.textContent = t("copied");
+      setTimeout(() => { button.textContent = t("copyAction"); }, 1200);
+    }
+
+    function attachCopyButtons(root = document) {
+      root.querySelectorAll(".copy-button").forEach(button => {
+        button.addEventListener("click", () => copyReply(button).catch(() => {}));
+      });
+    }
+
+    function renderHitRow(hit, riven, rowClass = "row") {
+      return `
+        <div class="${rowClass}">
+          <div class="cell">
+            <div class="listing-title">
+              <strong title="${escapeHtml(hit.title || hit.rivenName || "")}">${escapeHtml(displayHitTitle(hit))}</strong>
+            </div>
+            ${renderStatChips(hit)}
+          </div>
+          <div class="cell price-cell">${escapeHtml(hit.price)}</div>
+          <div class="cell seller-cell"><span class="seller-name" title="${escapeHtml(hit.sellerName)}">${escapeHtml(hit.sellerName)}</span><span class="status-pill ${hit.status}">${hit.status === "online" ? (lang === "zh" ? "在线" : "online") : (lang === "zh" ? "离线" : "offline")}</span></div>
+          <div class="cell time-cell"><span class="relative-time" data-time="${escapeHtml(hit.time)}">${escapeHtml(formatTime(hit.time))}</span></div>
+          <div class="cell"><button class="copy-button" type="button" data-reply="${escapeHtml(replyText(hit))}">${t("copyAction")}</button></div>
+        </div>
+      `;
+    }
+
+    function generatedNameCore(positives) {
+      const selected = positives.filter(Boolean).map(value => rivenNameParts[value] || ["Visi", "Ata"]);
+      if (!selected.length) return "Riven";
+      if (selected.length === 1) return selected[0][0];
+      if (selected.length === 2) return `${selected[0][0]}${selected[1][1].toLowerCase()}`;
+      return `${selected[0][0]}-${selected[1][0].toLowerCase()}${selected[2][1].toLowerCase()}`;
+    }
+
+    let knownWeaponNames = new Set(catalogWeaponFamilies);
+
+    function canonicalWeaponFromInput(value) {
+      const trimmed = value.trim();
+      const match = Object.entries(weaponMeta).find(([family, meta]) => trimmed === family || trimmed === meta.zh);
+      return match ? match[0] : trimmed;
+    }
+
+    function rivenWeaponFamily(target) {
+      const name = canonicalWeaponFromInput(target);
+      const suffixVariants = [" Prime", " Vandal", " Wraith"];
+      const prefixVariants = ["MK1-", "Prisma ", "Mara ", "Dex ", "Vaykor ", "Telos ", "Synoid ", "Rakta ", "Sancti ", "Secura "];
+      for (const suffix of suffixVariants) {
+        if (name.endsWith(suffix)) {
+          const candidate = name.slice(0, -suffix.length);
+          if (knownWeaponNames.has(candidate)) return candidate;
+        }
+      }
+      for (const prefix of prefixVariants) {
+        if (name.startsWith(prefix)) {
+          const candidate = name.slice(prefix.length);
+          if (knownWeaponNames.has(candidate)) return candidate;
+        }
+      }
+      return name;
+    }
+
+    function validRivenWeaponFamily(target, fallback = "Rubico") {
+      const family = rivenWeaponFamily(target || fallback);
+      return knownWeaponNames.has(family) ? family : fallback;
+    }
+
+    function weaponGroup(family) {
+      const meta = weaponMeta[rivenWeaponFamily(family)];
+      if (!meta) return null;
+      return meta.group === "archmelee" ? "melee" : meta.group;
+    }
+
+    function weaponGroupLabel(family) {
+      const labels = {
+        rifle: { en: "Rifle / primary pool", zh: "步枪 / 主武器词条池" },
+        shotgun: { en: "Shotgun pool", zh: "霰弹枪词条池" },
+        pistol: { en: "Pistol / secondary pool", zh: "手枪 / 副武器词条池" },
+        melee: { en: "Melee pool", zh: "近战词条池" },
+        archgun: { en: "Archgun pool", zh: "Archwing 枪械词条池" },
+        robotic: { en: "Robotic weapon pool", zh: "同伴武器词条池" },
+        all: { en: "All Riven stats", zh: "全部裂罅词条" }
+      };
+      return (labels[weaponGroup(family)] || labels.all)[lang];
+    }
+
+    function displayWeaponName(family) {
+      const clean = rivenWeaponFamily(family);
+      return lang === "zh" && weaponMeta[clean]?.zh ? weaponMeta[clean].zh : clean;
+    }
+
+    function hasLocalizedWeaponName(family) {
+      const clean = rivenWeaponFamily(family);
+      return Boolean(weaponMeta[clean]?.zh);
+    }
+
+    function defaultModalWeaponFamily() {
+      return weaponOptions.includes("Rubico") ? "Rubico" : weaponOptions[0] || "Rubico";
+    }
+
+    function generatedRivenName(riven) {
+      return `${rivenWeaponFamily(riven.target)} ${generatedNameCore(riven.positives)}`;
+    }
+
+    function priceNumber(price) {
+      return Number(String(price).replace(/[^\d.]/g, ""));
+    }
+
+    function queryTerms(query) {
+      return query.split(/\s+/).map(term => term.trim()).filter(Boolean);
+    }
+
+    function queryTermMatches(term, text, hit) {
+      const priceMatch = term.match(/^(<=|>=|<|>|=)?(\d+)\s*p?$/i);
+      if (priceMatch && hit) {
+        const [, operator = "=", rawValue] = priceMatch;
+        const wanted = Number(rawValue);
+        const actual = priceNumber(hit.price);
+        if (operator === "<") return actual < wanted;
+        if (operator === "<=") return actual <= wanted;
+        if (operator === ">") return actual > wanted;
+        if (operator === ">=") return actual >= wanted;
+        return actual === wanted;
+      }
+      return text.includes(term);
+    }
+
+    function listingSearchText(hit, riven) {
+      return [
+        rivenWeaponFamily(riven.target),
+        displayWeaponName(riven.target),
+        generatedRivenName(riven),
+        generatedNameCore(riven.positives),
+        statSummary(riven),
+        hit.title,
+        displayHitTitle(hit),
+        displayWeaponName(hit.weapon || riven.target),
+        hit.statsEn,
+        hit.statsZh,
+        hit.price,
+        hit.sellerName,
+        hit.status,
+        hit.status === "online" ? "在线" : "离线",
+        hit.time
+      ].join(" ").toLowerCase();
+    }
+
+    function queryMatchesListing(hit, riven, query) {
+      if (!query) return true;
+      const text = listingSearchText(hit, riven);
+      return queryTerms(query).every(term => queryTermMatches(term, text, hit));
+    }
+
+    function queryMatchesRiven(riven, query) {
+      if (!query) return true;
+      const rivenText = [
+        rivenWeaponFamily(riven.target),
+        displayWeaponName(riven.target),
+        riven.target,
+        generatedRivenName(riven),
+        generatedNameCore(riven.positives),
+        statSummary(riven),
+        riven.price
+      ].join(" ").toLowerCase();
+      const terms = queryTerms(query);
+      const matchesRivenText = terms.every(term => queryTermMatches(term, rivenText, null));
+      if (matchesRivenText) return true;
+      return listings
+        .filter(hit => hit.rivenId === riven.id && (!onlineOnly || hit.status === "online"))
+        .some(hit => queryMatchesListing(hit, riven, query));
+    }
+
+    function updateSearchHelp(hitCount, query) {
+      const node = document.querySelector("#searchHelp");
+      if (!query) {
+        node.textContent = t("searchHelp");
+        return;
+      }
+      node.textContent = lang === "zh" ? `当前裂罅匹配 ${hitCount} 条订单` : `${hitCount} matching listings for the selected Riven`;
+    }
+
+    function polarityLabel(value) {
+      const labels = {
+        Any: { en: "Any", zh: "任意" },
+        Madurai: { en: "V Madurai", zh: "V Madurai" },
+        Vazarin: { en: "D Vazarin", zh: "D Vazarin" },
+        Naramon: { en: "— Naramon", zh: "— Naramon" },
+        Zenurik: { en: "= Zenurik", zh: "= Zenurik" }
+      };
+      return (labels[value] || labels.Any)[lang];
+    }
+
+    function setPolarityOptions(select, value) {
+      const values = ["Any", "Madurai", "Vazarin", "Naramon", "Zenurik"];
+      select.innerHTML = values.map(item => `<option value="${item}">${polarityLabel(item)}</option>`).join("");
+      select.value = value || "Any";
+    }
+
+    function activeRiven() {
+      return rivens.find(riven => riven.id === selectedId) || rivens[0];
+    }
+
+    let modalWeaponFamily = "";
+
+    function currentModalWeaponFamily() {
+      const typed = document.querySelector("#modalTarget")?.value.trim() || "";
+      return modalWeaponFamily || validRivenWeaponFamily(typed, "");
+    }
+
+    function statOptionsForWeapon(family, select) {
+      const group = weaponGroup(family);
+      const isNegative = select.id.toLowerCase().includes("negative");
+      return statCatalog.filter(stat => stat.key === "" || ((!group || stat.groups.includes(group)) && (!isNegative || !stat.positiveOnly)));
+    }
+
+    function fillStatSelect(select, value) {
+      const options = statOptionsForWeapon(currentModalWeaponFamily(), select);
+      select.innerHTML = options.map(stat => {
+        const label = stat.key ? (lang === "zh" ? stat.zh : stat.en) : emptyStatLabel(select);
+        return `<option value="${stat.key}">${label}</option>`;
+      }).join("");
+      select.value = options.some(stat => stat.key === value) ? (value || "") : "";
+    }
+
+    function fillAllStatSelects() {
+      ["modalPositive1", "modalPositive2", "modalPositive3", "modalNegative"].forEach(id => {
+        const select = document.querySelector(`#${id}`);
+        if (select) fillStatSelect(select, select.value || "");
+      });
+    }
+
+    let weaponMenuIndex = 0;
+
+    function matchingWeapons(filter) {
+      const query = filter.trim().toLowerCase();
+      const ranked = weaponOptions
+        .map(name => ({
+          name,
+          search: `${name} ${weaponMeta[name]?.zh || ""} ${weaponGroupLabel(name)}`.toLowerCase(),
+          display: displayWeaponName(name)
+        }))
+        .map(item => ({
+          ...item,
+          score: !query ? 1 : item.search === query ? 4 : item.search.startsWith(query) || item.display.toLowerCase().startsWith(query) ? 3 : item.search.includes(query) ? 2 : 0
+        }))
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+      return ranked.slice(0, 10).map(item => item.name);
+    }
+
+    function renderWeaponMenu(filter = "", forceOpen = false) {
+      const input = document.querySelector("#modalTarget");
+      const menu = document.querySelector("#weaponMenu");
+      if (!input || !menu) return;
+      const options = matchingWeapons(filter || input.value);
+      weaponMenuIndex = Math.min(weaponMenuIndex, Math.max(0, options.length - 1));
+      menu.innerHTML = options.map((name, index) => `
+        <button type="button" class="combo-option" role="option" aria-selected="${index === weaponMenuIndex}" data-weapon="${name}">
+          <span>${escapeHtml(displayWeaponName(name))}</span>
+          <small>${escapeHtml(weaponGroupLabel(name))}</small>
+        </button>
+      `).join("");
+      const shouldOpen = forceOpen && options.length > 0;
+      menu.hidden = !shouldOpen;
+      input.setAttribute("aria-expanded", String(shouldOpen));
+      menu.querySelectorAll(".combo-option").forEach(button => {
+        button.addEventListener("mousedown", event => event.preventDefault());
+        button.addEventListener("click", () => selectWeapon(button.dataset.weapon));
+      });
+    }
+
+    function openWeaponMenu() {
+      weaponMenuIndex = 0;
+      renderWeaponMenu(document.querySelector("#modalTarget").value, true);
+    }
+
+    function closeWeaponMenu() {
+      const input = document.querySelector("#modalTarget");
+      const menu = document.querySelector("#weaponMenu");
+      if (!input || !menu) return;
+      menu.hidden = true;
+      input.setAttribute("aria-expanded", "false");
+    }
+
+    function selectWeapon(name) {
+      modalWeaponFamily = validRivenWeaponFamily(name);
+      document.querySelector("#modalTarget").value = displayWeaponName(modalWeaponFamily);
+      closeWeaponMenu();
+      fillAllStatSelects();
+      updateStatScopeLabels();
+      updateModalGeneratedName();
+    }
+
+    function updateStatScopeLabels() {
+      document.querySelector("#positiveLabel").textContent = `${t("positiveAttrs")} · ${weaponGroupLabel(modalWeaponFamily)}`;
+      document.querySelector("#negativeLabel").textContent = `${t("negativeAttr")} · ${weaponGroupLabel(modalWeaponFamily)}`;
+    }
+
+    function renderLanguage() {
+      document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
+      document.querySelector("#search").placeholder = lang === "zh" ? "搜索武器、词条、卖家、价格、时间" : "Search weapon, stat, seller, price, time";
+      document.querySelectorAll("[data-i18n]").forEach(node => {
+        node.textContent = t(node.dataset.i18n);
+      });
+      if (!document.querySelector("#addModal").hidden) {
+        document.querySelector("#modalTarget").value = displayWeaponName(modalWeaponFamily);
+        fillAllStatSelects();
+        renderWeaponMenu(modalWeaponFamily, !document.querySelector("#weaponMenu").hidden);
+        updateStatScopeLabels();
+      }
+      if (!document.querySelector("#hitsModal").hidden) renderAllHitsModal();
+      if (!document.querySelector("#weaponsModal").hidden) renderWeaponsModal();
+    }
+
+    let weaponOptions = catalogWeaponFamilies;
+
+    function populateTargets(names = catalogWeaponFamilies) {
+      weaponOptions = [...new Set(names.map(name => rivenWeaponFamily(name)))]
+        .filter(name => weaponMeta[name])
+        .sort((a, b) => a.localeCompare(b));
+      knownWeaponNames = new Set(weaponOptions);
+      renderWeaponMenu();
+    }
+
+    async function fetchBackendWeaponCatalog() {
+      const response = await fetch(`/api/weapons?lang=${lang === "zh" ? "zh" : "en"}`);
+      if (!response.ok) throw new Error("Weapon catalog unavailable");
+      const body = await response.json();
+      const families = (body.data || []).map(weapon => {
+        weaponMeta[weapon.family] = {
+          zh: weapon.labels?.zh || weapon.family,
+          group: weapon.group || weaponMeta[weapon.family]?.group || null
+        };
+        return weapon.family;
+      });
+      if (families.length) populateTargets(families);
+    }
+
+    async function apiJson(url, options = {}) {
+      const response = await fetch(url, {
+        headers: { "content-type": "application/json", ...(options.headers || {}) },
+        ...options
+      });
+      if (response.status === 204) return null;
+      const body = await response.json();
+      if (!response.ok) {
+        const error = new Error(body.error?.message || "Request failed");
+        error.code = body.error?.code || "REQUEST_FAILED";
+        throw error;
+      }
+      return body;
+    }
+
+    async function refreshData({ force = false } = {}) {
+      document.querySelector("#sourceStatus").textContent = t("refreshing");
+      try {
+        const rivenBody = await apiJson("/api/rivens");
+        rivens = rivenBody.data || [];
+        try {
+          const hitBody = await apiJson(`/api/hits?scope=${onlineOnly ? "online" : "all"}${force ? "&force=true" : ""}`);
+          listings = hitBody.data || [];
+          marketMeta = hitBody.meta || marketMeta;
+        } catch (error) {
+          marketMeta = {
+            ...marketMeta,
+            status: "unavailable",
+            nextRefreshInMs: 30000,
+            errorMessage: error.message
+          };
+        }
+      } catch (error) {
+        marketMeta = {
+          ...marketMeta,
+          status: "unavailable",
+          nextRefreshInMs: 30000,
+          errorMessage: error.message
+        };
+      }
+      marketMetaReceivedAt = Date.now();
+      if (!rivens.some(riven => riven.id === selectedId)) selectedId = rivens[0]?.id || null;
+      render();
+      scheduleMarketRefresh();
+    }
+
+    function renderList() {
+      const query = document.querySelector("#search").value.trim().toLowerCase();
+      const filtered = rivens.filter(riven => {
+        return queryMatchesRiven(riven, query);
+      });
+
+      const grouped = filtered.reduce((groups, riven) => {
+        const target = riven.target ? rivenWeaponFamily(riven.target) : t("weapon");
+        if (!groups.has(target)) groups.set(target, []);
+        groups.get(target).push(riven);
+        return groups;
+      }, new Map());
+
+      document.querySelector("#rivenCount").textContent = `${rivens.length}`;
+      if (!rivens.length) {
+        document.querySelector("#rivenList").innerHTML = `<div class="empty">${t("noRivens")}</div>`;
+        return;
+      }
+      document.querySelector("#rivenList").innerHTML = [...grouped.entries()].map(([weapon, group]) => `
+        <section class="weapon-group" aria-label="${escapeHtml(displayWeaponName(weapon))}">
+          <div class="weapon-group-head">
+            <strong>${escapeHtml(displayWeaponName(weapon))}</strong>
+            <span>${group.length} ${group.length === 1 ? t("rivenUnit") : t("rivenUnits")}</span>
+          </div>
+          <div class="weapon-rivens">
+            ${group.map(riven => {
+              const hits = listings.filter(hit => hit.rivenId === riven.id && (!onlineOnly || hit.status === "online")).length;
+              return `
+                <button class="riven-item" data-id="${riven.id}" aria-pressed="${riven.id === selectedId}">
+                  <strong>${escapeHtml(generatedNameCore(riven.positives))}</strong>
+                  <small>${escapeHtml(statSummary(riven) || displayGeneratedRivenName(riven))}</small>
+                  <span class="riven-meta"><span>${escapeHtml(riven.price || "any")}</span><span>${hits} ${lang === "zh" ? "命中" : "hits"}</span></span>
+                </button>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `).join("");
+
+      document.querySelectorAll(".riven-item").forEach(button => {
+        button.addEventListener("click", () => {
+          selectedId = button.dataset.id;
+          render();
+        });
+      });
+    }
+
+    function updateModalGeneratedName() {
+      const typedTarget = document.querySelector("#modalTarget").value.trim();
+      const target = typedTarget ? validRivenWeaponFamily(typedTarget, modalWeaponFamily) : modalWeaponFamily;
+      if (!target) {
+        document.querySelector("#modalName").textContent = "";
+        return;
+      }
+      const preview = {
+        target,
+        positives: [document.querySelector("#modalPositive1").value, document.querySelector("#modalPositive2").value, document.querySelector("#modalPositive3").value]
+      };
+      document.querySelector("#modalName").textContent = displayGeneratedRivenName(preview);
+    }
+
+    function renderMetrics() {
+      const onlineHits = listings.filter(hit => hit.status === "online").length;
+      const weapons = new Set(rivens.map(riven => rivenWeaponFamily(riven.target))).size;
+      document.querySelector("#activeMetric").textContent = rivens.length;
+      document.querySelector("#hitMetric").textContent = onlineOnly ? onlineHits : listings.length;
+      document.querySelector("#weaponMetric").textContent = weapons;
+    }
+
+    function syncSortControls() {
+      const priceSorts = document.querySelectorAll('[data-sort-control="price"]');
+      const timeSorts = document.querySelectorAll('[data-sort-control="time"]');
+      const priceActive = hitSort === "priceAsc" || hitSort === "priceDesc";
+      const timeActive = hitSort === "timeNew" || hitSort === "timeOld";
+
+      priceSorts.forEach(priceSort => {
+        priceSort.setAttribute("aria-pressed", String(priceActive));
+        priceSort.querySelector(".sort-glyph").textContent = hitSort === "priceDesc" ? "↓" : priceActive ? "↑" : "↕";
+        priceSort.setAttribute("aria-label", hitSort === "priceAsc" ? t("priceLowHigh") : t("priceHighLow"));
+      });
+      timeSorts.forEach(timeSort => {
+        timeSort.setAttribute("aria-pressed", String(timeActive));
+        timeSort.querySelector(".sort-glyph").textContent = hitSort === "timeOld" ? "↑" : timeActive ? "↓" : "↕";
+        timeSort.setAttribute("aria-label", hitSort === "timeNew" ? t("timeNewest") : t("timeOldest"));
+      });
+    }
+
+    function toggleHitSort(type) {
+      if (type === "price") hitSort = hitSort === "priceAsc" ? "priceDesc" : "priceAsc";
+      if (type === "time") hitSort = hitSort === "timeNew" ? "timeOld" : "timeNew";
+      syncSortControls();
+      render();
+    }
+
+    function renderHits() {
+      const active = activeRiven();
+      const query = document.querySelector("#search").value.trim().toLowerCase();
+      if (!active) {
+        visibleHitCount = 0;
+        updateSearchHelp(0, query);
+        updateSourceStatus();
+        document.querySelector("#hits").innerHTML = `<div class="empty">${t("noRivens")}</div>`;
+        return;
+      }
+      const hits = listings
+        .filter(hit => hit.rivenId === active.id && (!onlineOnly || hit.status === "online") && queryMatchesListing(hit, active, query))
+        .map(hit => ({ hit, riven: active }));
+      visibleHitCount = hits.length;
+      updateSearchHelp(hits.length, query);
+      updateSourceStatus();
+      syncSortControls();
+      const rows = sortedHits(hits);
+      document.querySelector("#hits").innerHTML = rows.length ? rows.map(({ hit, riven }) => renderHitRow(hit, riven)).join("") : `<div class="empty">${t("noHits")}</div>`;
+      attachCopyButtons(document.querySelector("#hits"));
+    }
+
+    function refreshSecondsRemaining() {
+      const next = Number(marketMeta.nextRefreshInMs || marketMeta.refreshIntervalMs || 0);
+      const elapsed = Date.now() - marketMetaReceivedAt;
+      return Math.max(0, Math.ceil((next - elapsed) / 1000));
+    }
+
+    function scheduleMarketRefresh(delayMs) {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      const fallback = Number(marketMeta.refreshIntervalMs || 120000);
+      const delay = Math.max(1000, Number(delayMs ?? marketMeta.nextRefreshInMs ?? fallback));
+      refreshTimer = setTimeout(() => {
+        refreshData().catch(() => {
+          marketMeta = {
+            ...marketMeta,
+            status: "unavailable",
+            nextRefreshInMs: 30000
+          };
+          marketMetaReceivedAt = Date.now();
+          render();
+          scheduleMarketRefresh(30000);
+        });
+      }, delay);
+    }
+
+    function updateSourceStatus() {
+      const node = document.querySelector("#sourceStatus");
+      if (!node) return;
+      node.classList.remove("market-waiting", "market-error");
+      if (!activeRiven()) {
+        node.textContent = `0 ${t("listingCount")} • warframe.market • ${t("refreshEvery")}`;
+        return;
+      }
+      const remaining = refreshSecondsRemaining();
+      if (marketMeta.status === "rate_limited") {
+        node.classList.add("market-waiting");
+        node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${t("rateLimited")} ${remaining}s`;
+        return;
+      }
+      if (marketMeta.status === "unavailable") {
+        node.classList.add("market-error");
+        node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${t("marketUnavailable")} ${remaining}s`;
+        return;
+      }
+      const scopeLabel = onlineOnly
+        ? (lang === "zh" ? "在线" : "online")
+        : (lang === "zh" ? "全部" : "all");
+      node.textContent = `${visibleHitCount} ${t("listingCount")} • warframe.market • ${scopeLabel} • ${remaining}s`;
+    }
+
+    function updateRelativeTimes() {
+      document.querySelectorAll(".relative-time[data-time]").forEach(node => {
+        node.textContent = formatTime(node.dataset.time);
+      });
+    }
+
+    function allVisibleHits() {
+      return listings
+        .filter(hit => hit.status === "online")
+        .map(hit => ({ hit, riven: rivens.find(item => item.id === hit.rivenId) || { target: hit.title.split(" ")[0] } }));
+    }
+
+    function sortedHits(rows) {
+      return [...rows].sort((a, b) => {
+        if (hitSort === "timeNew" || hitSort === "timeOld") {
+          const delta = hitTimestamp(a.hit) - hitTimestamp(b.hit);
+          return hitSort === "timeNew" ? -delta : delta;
+        }
+        const delta = priceNumber(a.hit.price) - priceNumber(b.hit.price);
+        if (delta !== 0) return hitSort === "priceDesc" ? -delta : delta;
+        return hitTimestamp(b.hit) - hitTimestamp(a.hit);
+      });
+    }
+
+    function hitTimestamp(hit) {
+      const time = Date.parse(hit.time);
+      return Number.isFinite(time) ? time : 0;
+    }
+
+    function renderHitHeaderRow(rowClass = "hit-line") {
+      return `
+        <div class="${rowClass} head">
+          <div>${t("listing")}</div>
+          <div>
+            <button class="sort-header" type="button" aria-pressed="false" data-sort-control="price">
+              <span>${t("price")}</span>
+              <span class="sort-glyph" aria-hidden="true">↕</span>
+            </button>
+          </div>
+          <div>${t("seller")}</div>
+          <div>
+            <button class="sort-header" type="button" aria-pressed="false" data-sort-control="time">
+              <span>${t("time")}</span>
+              <span class="sort-glyph" aria-hidden="true">↕</span>
+            </button>
+          </div>
+          <div>${t("copy")}</div>
+        </div>
+      `;
+    }
+
+    function renderAllHitsModal() {
+      const rows = sortedHits(allVisibleHits());
+      document.querySelector("#hitsModalCount").textContent = `${rows.length} ${t("listingCount")}`;
+      syncSortControls();
+      document.querySelector("#allHitsList").innerHTML = rows.length
+        ? `${renderHitHeaderRow()}${rows.map(({ hit, riven }) => renderHitRow(hit, riven, "hit-line")).join("")}`
+        : `<div class="empty">${t("noHits")}</div>`;
+      syncSortControls();
+      attachCopyButtons(document.querySelector("#allHitsList"));
+    }
+
+    function openHitsModal() {
+      renderAllHitsModal();
+      document.querySelector("#hitsModal").hidden = false;
+    }
+
+    function closeHitsModal() {
+      document.querySelector("#hitsModal").hidden = true;
+    }
+
+    function weaponRouteRows() {
+      const rows = new Map();
+      rivens.forEach(riven => {
+        const weapon = rivenWeaponFamily(riven.target);
+        if (!rows.has(weapon)) rows.set(weapon, { weapon, rivens: 0, hits: 0 });
+        rows.get(weapon).rivens += 1;
+      });
+      listings.forEach(hit => {
+        const riven = rivens.find(item => item.id === hit.rivenId);
+        if (!riven) return;
+        const weapon = rivenWeaponFamily(riven.target);
+        if (!rows.has(weapon)) rows.set(weapon, { weapon, rivens: 0, hits: 0 });
+        rows.get(weapon).hits += 1;
+      });
+      return [...rows.values()].sort((a, b) => a.weapon.localeCompare(b.weapon));
+    }
+
+    function renderWeaponsModal() {
+      const rows = weaponRouteRows();
+      document.querySelector("#weaponsModalCount").textContent = `${rows.length} ${lang === "zh" ? "件武器" : rows.length === 1 ? "weapon" : "weapons"} • ${t("weaponRouteHint")}`;
+      document.querySelector("#weaponRoutes").innerHTML = rows.length ? rows.map(row => `
+        <button class="weapon-route" type="button" data-weapon="${escapeHtml(row.weapon)}">
+          <strong>${escapeHtml(displayWeaponName(row.weapon))}</strong>
+          <span>${row.rivens} ${row.rivens === 1 ? t("rivenUnit") : t("rivenUnits")}</span>
+          <span>${row.hits} ${lang === "zh" ? "命中" : "hits"}</span>
+        </button>
+      `).join("") : `<div class="empty">${t("noRivens")}</div>`;
+      document.querySelectorAll(".weapon-route").forEach(button => {
+        button.addEventListener("click", () => {
+          const weapon = button.dataset.weapon;
+          document.querySelector("#search").value = displayWeaponName(weapon);
+          selectedId = rivens.find(riven => rivenWeaponFamily(riven.target) === weapon)?.id || selectedId;
+          closeWeaponsModal();
+          render();
+          document.querySelector(".sidebar").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+
+    function openWeaponsModal() {
+      renderWeaponsModal();
+      document.querySelector("#weaponsModal").hidden = false;
+    }
+
+    function closeWeaponsModal() {
+      document.querySelector("#weaponsModal").hidden = true;
+    }
+
+    function openActiveRivensRoute() {
+      if (!rivens.length) {
+        openModal();
+        return;
+      }
+      document.querySelector("#search").value = "";
+      render();
+      document.querySelector(".sidebar").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.querySelector("#rivenList .riven-item")?.focus();
+    }
+
+    function openModal() {
+      modalWeaponFamily = "";
+      fillAllStatSelects();
+      document.querySelector("#modalTarget").value = "";
+      document.querySelector("#modalPrice").value = "";
+      document.querySelector("#modalPositive1").value = "critical_chance";
+      document.querySelector("#modalPositive2").value = "critical_damage";
+      document.querySelector("#modalPositive3").value = "multishot";
+      updateModalGeneratedName();
+      document.querySelector("#modalNegative").value = "";
+      updateStatScopeLabels();
+      setPolarityOptions(document.querySelector("#modalPolarity"), "Any");
+      document.querySelector("#modalMastery").value = "";
+      document.querySelector("#modalRank").value = "Rank 8";
+      document.querySelector("#modalRerolls").value = "";
+      document.querySelector("#addModal").hidden = false;
+      renderWeaponMenu("", true);
+      document.querySelector("#modalTarget").focus();
+    }
+
+    function closeModal() {
+      document.querySelector("#addModal").hidden = true;
+    }
+
+    async function createRiven() {
+      const typedTarget = document.querySelector("#modalTarget").value.trim();
+      const target = typedTarget ? validRivenWeaponFamily(typedTarget, modalWeaponFamily) : "";
+      const body = {
+        target,
+        price: document.querySelector("#modalPrice").value.trim(),
+        positives: [document.querySelector("#modalPositive1").value, document.querySelector("#modalPositive2").value, document.querySelector("#modalPositive3").value],
+        negative: document.querySelector("#modalNegative").value,
+        polarity: document.querySelector("#modalPolarity").value,
+        mastery: document.querySelector("#modalMastery").value.trim(),
+        rank: document.querySelector("#modalRank").value,
+        rerolls: document.querySelector("#modalRerolls").value.trim()
+      };
+      const result = await apiJson("/api/rivens", { method: "POST", body: JSON.stringify(body) });
+      selectedId = result.data.id;
+      closeModal();
+      await refreshData({ force: true });
+    }
+
+    async function deleteRiven() {
+      if (!selectedId) return;
+      const index = rivens.findIndex(riven => riven.id === selectedId);
+      await apiJson(`/api/rivens/${encodeURIComponent(selectedId)}`, { method: "DELETE" });
+      selectedId = rivens[Math.max(0, index - 1)]?.id || null;
+      await refreshData({ force: true });
+    }
+
+    function render() {
+      renderLanguage();
+      renderList();
+      renderMetrics();
+      renderHits();
+    }
+
+    document.querySelectorAll("[data-lang]").forEach(button => {
+      button.addEventListener("click", async () => {
+        lang = button.dataset.lang;
+        document.querySelectorAll("[data-lang]").forEach(item => item.setAttribute("aria-pressed", item === button));
+        await fetchBackendWeaponCatalog().catch(() => {});
+        render();
+      });
+    });
+
+    document.querySelector("#onlineOnly").addEventListener("click", async () => {
+      onlineOnly = true;
+      document.querySelector("#onlineOnly").setAttribute("aria-pressed", "true");
+      document.querySelector("#includeOffline").setAttribute("aria-pressed", "false");
+      await refreshData();
+    });
+
+    document.querySelector("#includeOffline").addEventListener("click", async () => {
+      onlineOnly = false;
+      document.querySelector("#onlineOnly").setAttribute("aria-pressed", "false");
+      document.querySelector("#includeOffline").setAttribute("aria-pressed", "true");
+      await refreshData();
+    });
+
+    document.querySelector("#search").addEventListener("input", render);
+    document.querySelector("#activeRivensCard").addEventListener("click", openActiveRivensRoute);
+    document.querySelector("#onlineHitsCard").addEventListener("click", openHitsModal);
+    document.querySelector("#weaponsCard").addEventListener("click", openWeaponsModal);
+    document.querySelector("#deleteSide").addEventListener("click", () => deleteRiven().catch(error => alert(error.message)));
+    document.querySelector("#addTop").addEventListener("click", openModal);
+    document.querySelector("#addSide").addEventListener("click", openModal);
+    document.querySelector("#closeModal").addEventListener("click", closeModal);
+    document.querySelector("#cancelModal").addEventListener("click", closeModal);
+    document.querySelector("#createModal").addEventListener("click", () => createRiven().catch(error => alert(error.message)));
+    document.querySelector("#addModal").addEventListener("click", event => {
+      if (event.target.id === "addModal") closeModal();
+    });
+    document.querySelector("#closeHitsModal").addEventListener("click", closeHitsModal);
+    document.querySelector("#closeWeaponsModal").addEventListener("click", closeWeaponsModal);
+    document.querySelector("#priceSort").addEventListener("click", () => toggleHitSort("price"));
+    document.querySelector("#timeSort").addEventListener("click", () => toggleHitSort("time"));
+    document.querySelector("#hitsModal").addEventListener("click", event => {
+      const sortButton = event.target.closest("[data-sort-control]");
+      if (sortButton) {
+        toggleHitSort(sortButton.dataset.sortControl);
+        return;
+      }
+      if (event.target.id === "hitsModal") closeHitsModal();
+    });
+    document.querySelector("#weaponsModal").addEventListener("click", event => {
+      if (event.target.id === "weaponsModal") closeWeaponsModal();
+    });
+    ["modalTarget", "modalPositive1", "modalPositive2", "modalPositive3"].forEach(id => {
+      document.querySelector(`#${id}`).addEventListener("input", updateModalGeneratedName);
+      document.querySelector(`#${id}`).addEventListener("change", updateModalGeneratedName);
+    });
+    document.querySelector("#modalTarget").addEventListener("focus", openWeaponMenu);
+    document.querySelector("#modalTarget").addEventListener("input", event => {
+      weaponMenuIndex = 0;
+      if (!event.target.value.trim()) {
+        modalWeaponFamily = "";
+        fillAllStatSelects();
+        updateStatScopeLabels();
+        updateModalGeneratedName();
+        renderWeaponMenu("", true);
+        return;
+      }
+      const typedFamily = rivenWeaponFamily(event.target.value);
+      if (weaponOptions.includes(typedFamily) || Object.values(weaponMeta).some(meta => meta.zh === event.target.value.trim())) {
+        modalWeaponFamily = validRivenWeaponFamily(typedFamily);
+        fillAllStatSelects();
+        updateStatScopeLabels();
+      }
+      renderWeaponMenu(event.target.value, true);
+    });
+    document.querySelector("#modalTarget").addEventListener("blur", event => {
+      const typedFamily = rivenWeaponFamily(event.target.value.trim());
+      modalWeaponFamily = typedFamily ? validRivenWeaponFamily(typedFamily, "") : "";
+      event.target.value = modalWeaponFamily ? displayWeaponName(modalWeaponFamily) : "";
+      fillAllStatSelects();
+      updateStatScopeLabels();
+      updateModalGeneratedName();
+      setTimeout(closeWeaponMenu, 120);
+    });
+    document.querySelector("#modalTarget").addEventListener("keydown", event => {
+      const menu = document.querySelector("#weaponMenu");
+      const options = [...menu.querySelectorAll(".combo-option")];
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        weaponMenuIndex = Math.min(weaponMenuIndex + 1, Math.max(0, options.length - 1));
+        renderWeaponMenu(event.target.value, true);
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        weaponMenuIndex = Math.max(weaponMenuIndex - 1, 0);
+        renderWeaponMenu(event.target.value, true);
+      }
+      if (event.key === "Enter" && !menu.hidden && options[weaponMenuIndex]) {
+        event.preventDefault();
+        selectWeapon(options[weaponMenuIndex].dataset.weapon);
+      }
+      if (event.key === "Escape") closeWeaponMenu();
+    });
+
+    populateTargets();
+    fetchBackendWeaponCatalog().catch(() => populateTargets()).then(() => refreshData().catch(() => {
+      marketMeta = { ...marketMeta, status: "unavailable", nextRefreshInMs: 30000 };
+      marketMetaReceivedAt = Date.now();
+      render();
+      scheduleMarketRefresh(30000);
+    }));
+    setInterval(() => {
+      updateSourceStatus();
+      updateRelativeTimes();
+    }, 1000);
+    fillAllStatSelects();
+    render();
+  </script>
+</body>
+</html>

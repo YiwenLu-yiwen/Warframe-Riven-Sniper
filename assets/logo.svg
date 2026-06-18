@@ -1,0 +1,37 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Warframe Riven Sniper logo</title>
+  <desc id="desc">A gold Riven diamond inside a teal sniper reticle on a dark background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="24" y1="18" x2="216" y2="222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#201B13"/>
+      <stop offset="1" stop-color="#0E0C09"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="74" y1="58" x2="168" y2="176" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1D892"/>
+      <stop offset=".52" stop-color="#D6A84C"/>
+      <stop offset="1" stop-color="#8B6623"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="44" y1="42" x2="196" y2="198" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9FD5D7"/>
+      <stop offset="1" stop-color="#4B8D92"/>
+    </linearGradient>
+    <filter id="shadow" x="20" y="20" width="200" height="204" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000000" flood-opacity=".35"/>
+    </filter>
+  </defs>
+
+  <rect width="240" height="240" rx="48" fill="url(#bg)"/>
+  <circle cx="120" cy="120" r="86" stroke="#423A2B" stroke-width="2"/>
+  <circle cx="120" cy="120" r="66" stroke="url(#teal)" stroke-width="3" stroke-dasharray="22 12"/>
+  <path d="M120 30v36M120 174v36M30 120h36M174 120h36" stroke="url(#teal)" stroke-width="4" stroke-linecap="round"/>
+
+  <g filter="url(#shadow)">
+    <path d="M120 50 178 120 120 190 62 120 120 50Z" fill="#15120E" stroke="url(#gold)" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M120 70 159 120 120 170 81 120 120 70Z" fill="url(#gold)" fill-opacity=".16" stroke="#D6A84C" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M93 119h54" stroke="#F4EAD6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M120 92v56" stroke="#F4EAD6" stroke-width="5" stroke-linecap="round"/>
+    <path d="M101 104h38M101 136h38" stroke="#78B7BD" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <path d="M52 74h20M168 74h20M52 166h20M168 166h20" stroke="#D6A84C" stroke-width="4" stroke-linecap="round"/>
+</svg>

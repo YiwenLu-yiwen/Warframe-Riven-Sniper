@@ -1,0 +1,15 @@
+{
+  "name": "warframe-riven-sniper",
+  "version": "1.0.0",
+  "description": "A Warframe Riven auction sniper for tracking weapon-specific Riven listings.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
