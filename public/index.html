@@ -1474,7 +1474,7 @@
               <span class="count" id="sourceStatus">0 条订单</span>
               <label class="refresh-control" for="refreshSeconds">
                 <span data-i18n="refreshLabel">刷新</span>
-                <input id="refreshSeconds" type="number" min="10" step="10" inputmode="numeric" value="120" aria-describedby="refreshRisk">
+                <input id="refreshSeconds" type="number" min="10" step="10" inputmode="numeric" value="60" aria-describedby="refreshRisk">
                 <span>s</span>
               </label>
               <span class="refresh-risk" id="refreshRisk" data-i18n="refreshRisk" hidden>高风险</span>
@@ -1985,7 +1985,7 @@
     const browserNotificationStorageKey = "warframe-riven-sniper-browser-notifications";
     const soundNotificationStorageKey = "warframe-riven-sniper-notification-sound";
     const refreshIntervalStorageKey = "warframe-riven-sniper-refresh-seconds";
-    const defaultRefreshSeconds = 120;
+    const defaultRefreshSeconds = 60;
     const minimumRefreshSeconds = 10;
 
     function storedLanguage() {

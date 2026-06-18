@@ -2,12 +2,13 @@ import { findWeaponCatalogEntry, weaponCatalog } from "./catalog.js";
 
 const MARKET_BASE_URL = "https://api.warframe.market/v1";
 const VARIANT_WORDS = new Set(["prime", "vandal", "wraith"]);
-export const MARKET_REFRESH_INTERVAL_MS = 120000;
+export const MARKET_REFRESH_INTERVAL_MS = 60000;
 export const MARKET_MIN_REFRESH_INTERVAL_MS = 10000;
 export const MARKET_MIN_REQUEST_INTERVAL_MS = 1000;
 export const MARKET_RATE_LIMIT_BACKOFF_MS = 10000;
 export const MARKET_FORCE_REFRESH_WEAPON_LIMIT = 3;
 const MARKET_RATE_LIMIT_STATUS = 429;
+const MARKET_WEAPON_SORTS = ["price_asc", "price_desc"];
 
 const attributeLabels = {
   "base_damage_/_melee_damage": "Base Damage",
@@ -189,11 +190,13 @@ export function marketSearchParamsForRiven(riven) {
   return params;
 }
 
-function marketSearchParamsForWeapon(weapon) {
-  return {
+function marketSearchParamsForWeapon(weapon, { sortBy = "" } = {}) {
+  const params = {
     type: "riven",
     weapon_url_name: weaponUrlNameFromFamily(weapon)
   };
+  if (sortBy) params.sort_by = sortBy;
+  return params;
 }
 
 export function marketHitMatchesRiven(hit, riven) {
@@ -321,14 +324,21 @@ async function fetchMarketHitsForRiven(riven, { scope = "online", limit = 50, ..
 }
 
 async function fetchMarketHitsForWeapon(weapon, { scope = "online", ...requestOptions } = {}) {
-  const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
-  Object.entries(marketSearchParamsForWeapon(weapon)).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-  const payload = await readMarketPayload(url, requestOptions);
-  return (payload.auctions || [])
-    .map(normalizeMarketAuction)
-    .filter(hit => scope === "all" || hit.status === "online");
+  const hitsById = new Map();
+
+  for (const sortBy of MARKET_WEAPON_SORTS) {
+    const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
+    Object.entries(marketSearchParamsForWeapon(weapon, { sortBy })).forEach(([key, value]) => {
+      url.searchParams.set(key, value);
+    });
+    const payload = await readMarketPayload(url, requestOptions);
+    for (const hit of (payload.auctions || []).map(normalizeMarketAuction)) {
+      if (scope !== "all" && hit.status !== "online") continue;
+      if (!hitsById.has(hit.id)) hitsById.set(hit.id, hit);
+    }
+  }
+
+  return [...hitsById.values()];
 }
 
 function cacheKeyForRivens(rivens, scope, namespace = "default") {
