@@ -9,7 +9,6 @@ export const MARKET_MIN_REQUEST_INTERVAL_MS = 1000;
 export const MARKET_RATE_LIMIT_BACKOFF_MS = 10000;
 export const MARKET_FORCE_REFRESH_WEAPON_LIMIT = 3;
 const MARKET_RATE_LIMIT_STATUS = 429;
-const MARKET_WEAPON_SORTS = ["price_asc", "price_desc"];
 const RIVEN_MARKET_TIMEOUT_MS = 8000;
 
 const attributeLabels = {
@@ -271,6 +270,22 @@ function marketHitMatchesRivenPrice(hit, riven) {
   if (hasMin && actual <= marketPriceNumber(riven.minPrice)) return false;
   if (hasMax && actual >= marketPriceNumber(riven.price)) return false;
   return true;
+}
+
+function hasConfiguredMaxPrice(riven = {}) {
+  return Boolean(String(riven.price || "").replace(/[^\d]/g, ""));
+}
+
+function hasConfiguredMinPrice(riven = {}) {
+  const value = marketPriceNumber(riven.minPrice);
+  return Number.isFinite(value) && value > 0;
+}
+
+function marketSortForRivens(rivens = []) {
+  const list = Array.isArray(rivens) ? rivens : [];
+  const hasMax = list.some(hasConfiguredMaxPrice);
+  const hasMin = list.some(hasConfiguredMinPrice);
+  return hasMin && !hasMax ? "price_desc" : "price_asc";
 }
 
 function wait(ms) {
@@ -537,22 +552,15 @@ async function fetchMarketHitsForRiven(riven, { scope = "online", limit = 50, ..
     .slice(0, Math.max(1, Math.min(Number(limit) || 50, 100)));
 }
 
-async function fetchMarketHitsForWeapon(weapon, { scope = "online", ...requestOptions } = {}) {
-  const hitsById = new Map();
-
-  for (const sortBy of MARKET_WEAPON_SORTS) {
-    const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
-    Object.entries(marketSearchParamsForWeapon(weapon, { sortBy })).forEach(([key, value]) => {
-      url.searchParams.set(key, value);
-    });
-    const payload = await readMarketPayload(url, requestOptions);
-    for (const hit of (payload.auctions || []).map(normalizeMarketAuction)) {
-      if (scope !== "all" && hit.status !== "online") continue;
-      if (!hitsById.has(hit.id)) hitsById.set(hit.id, hit);
-    }
-  }
-
-  return [...hitsById.values()];
+async function fetchMarketHitsForWeapon(weapon, { scope = "online", rivens = [], ...requestOptions } = {}) {
+  const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
+  Object.entries(marketSearchParamsForWeapon(weapon, { sortBy: marketSortForRivens(rivens) })).forEach(([key, value]) => {
+    url.searchParams.set(key, value);
+  });
+  const payload = await readMarketPayload(url, requestOptions);
+  return (payload.auctions || [])
+    .map(normalizeMarketAuction)
+    .filter(hit => scope === "all" || hit.status === "online");
 }
 
 function cacheKeyForRivens(rivens, scope, namespace = "default") {
@@ -635,6 +643,7 @@ async function fetchCachedMarketHitsForWeapon(group, {
 
   const hits = await fetchMarketHitsForWeapon(group.weapon, {
     scope,
+    rivens: group.rivens,
     fetchImpl,
     sleep,
     minRequestIntervalMs,
