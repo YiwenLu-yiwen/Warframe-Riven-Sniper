@@ -31,6 +31,16 @@ describe("Frontend preferences", () => {
     assert.match(html, /storeLanguage\(lang\);/);
     assert.match(html, /button\.dataset\.lang === lang/);
   });
+
+  it("keeps min and max price inputs numeric with separate platinum suffixes", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /<div class="price-entry">/);
+    assert.match(html, /<input id="modalMinPrice" inputmode="numeric" pattern="\[0-9\]\*"/);
+    assert.match(html, /<input id="modalPrice" inputmode="numeric" pattern="\[0-9\]\*"/);
+    assert.match(html, /<span[^>]*aria-hidden="true">p<\/span>/);
+    assert.match(html, /addEventListener\("input", sanitizePriceInput\)/);
+  });
 });
 
 describe("Riven weapon catalog", () => {
@@ -297,6 +307,20 @@ describe("Warframe.Market adapter", () => {
     assert.equal(marketHitMatchesRiven(wrongNegative, riven), false);
   });
 
+  it("filters market hits by configured Riven min and max prices", () => {
+    const riven = {
+      target: "Rubico",
+      positives: [],
+      minPrice: "100p",
+      price: "500p"
+    };
+
+    assert.equal(marketHitMatchesRiven({ price: "320p", attributes: [] }, riven), true);
+    assert.equal(marketHitMatchesRiven({ price: "99p", attributes: [] }, riven), false);
+    assert.equal(marketHitMatchesRiven({ price: "100p", attributes: [] }, riven), false);
+    assert.equal(marketHitMatchesRiven({ price: "500p", attributes: [] }, riven), false);
+  });
+
   it("searches each weapon once and filters all Rivens locally", async () => {
     const requestedWeapons = [];
     const fetchImpl = async url => {
@@ -496,6 +520,36 @@ describe("Stored Riven watches", () => {
     assert.equal(listRivens().length, 1);
     assert.equal(deleteRiven(riven.id), true);
     assert.deepEqual(listRivens(), []);
+  });
+
+  it("normalizes numeric Riven prices to platinum strings", () => {
+    const riven = createRiven({
+      target: "Rubico",
+      positives: ["critical_chance"],
+      price: "500"
+    });
+
+    assert.equal(riven.price, "500p");
+    assert.equal(riven.minPrice, "");
+    assert.equal(deleteRiven(riven.id), true);
+  });
+
+  it("stores optional minimum prices and rejects ranges above the max", () => {
+    const riven = createRiven({
+      target: "Rubico",
+      positives: ["critical_chance"],
+      minPrice: "100",
+      price: "500"
+    });
+
+    assert.equal(riven.minPrice, "100p");
+    assert.equal(riven.price, "500p");
+    assert.throws(() => createRiven({
+      target: "Rubico",
+      minPrice: "600",
+      price: "500"
+    }), /Minimum price cannot be larger than max price/);
+    assert.equal(deleteRiven(riven.id), true);
   });
 
   it("can persist user-created watches across store reloads", () => {

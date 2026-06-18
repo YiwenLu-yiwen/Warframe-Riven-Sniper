@@ -195,7 +195,23 @@ export function marketHitMatchesRiven(hit, riven) {
   const wantedPositiveKeys = (riven.positives || []).filter(Boolean);
   const positivesMatch = wantedPositiveKeys.every(key => positiveKeys.has(key));
   const negativeMatches = !riven.negative || negativeKeys.has(riven.negative);
-  return positivesMatch && negativeMatches;
+  return positivesMatch && negativeMatches && marketHitMatchesRivenPrice(hit, riven);
+}
+
+function marketPriceNumber(price) {
+  const value = Number(String(price || "").replace(/[^\d.]/g, ""));
+  return Number.isFinite(value) ? value : NaN;
+}
+
+function marketHitMatchesRivenPrice(hit, riven) {
+  const hasMin = Boolean(String(riven.minPrice || "").replace(/[^\d]/g, ""));
+  const hasMax = Boolean(String(riven.price || "").replace(/[^\d]/g, ""));
+  if (!hasMin && !hasMax) return true;
+  const actual = marketPriceNumber(hit.price);
+  if (!Number.isFinite(actual)) return false;
+  if (hasMin && actual <= marketPriceNumber(riven.minPrice)) return false;
+  if (hasMax && actual >= marketPriceNumber(riven.price)) return false;
+  return true;
 }
 
 function wait(ms) {

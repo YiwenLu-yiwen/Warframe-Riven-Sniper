@@ -167,6 +167,35 @@
       padding-left: 2px;
     }
 
+    .price-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      border: 1px solid var(--line);
+      background: #0e0c09;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .price-entry:focus-within {
+      border-color: var(--accent);
+    }
+
+    .price-entry input {
+      min-height: 38px;
+      border: 0;
+      background: transparent;
+      border-radius: 0;
+    }
+
+    .price-entry span {
+      min-width: 32px;
+      padding: 0 10px;
+      color: var(--accent);
+      font-weight: 700;
+      border-left: 1px solid var(--line);
+    }
+
     .seg {
       display: inline-grid;
       grid-auto-flow: column;
@@ -936,7 +965,7 @@
       <div class="search-row">
         <div class="smart-search">
           <input id="search" type="search" aria-label="智能搜索" placeholder="搜索武器、词条、卖家、价格、时间">
-          <span class="search-help" id="searchHelp" data-i18n="searchHelp">试试：暴击伤害、卖家名、&lt;450p、在线</span>
+          <span class="search-help" id="searchHelp" data-i18n="searchHelp">试试：暴击伤害、卖家名、&lt;450p、&gt;100p、在线</span>
         </div>
         <div class="seg" aria-label="Seller scope">
           <button id="onlineOnly" aria-pressed="true" data-i18n="onlineOnly">只看在线</button>
@@ -1022,8 +1051,18 @@
             </div>
           </div>
           <div class="field span-3">
+            <label for="modalMinPrice" data-i18n="minPrice">最低价</label>
+            <div class="price-entry">
+              <input id="modalMinPrice" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-describedby="modalMinPriceSuffix">
+              <span id="modalMinPriceSuffix" aria-hidden="true">p</span>
+            </div>
+          </div>
+          <div class="field span-3">
             <label for="modalPrice" data-i18n="maxPrice">最高价</label>
-            <input id="modalPrice" value="450p">
+            <div class="price-entry">
+              <input id="modalPrice" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-describedby="modalPriceSuffix">
+              <span id="modalPriceSuffix" aria-hidden="true">p</span>
+            </div>
           </div>
 
           <div class="field span-12">
@@ -1115,13 +1154,23 @@
     </section>
   </div>
 
-  <script>
+  <script type="module">
+    import {
+      displayPriceRange,
+      normalizePlatPrice,
+      parseSearchQuery,
+      priceRangeMatchesFilters,
+      priceNumber,
+      queryHasPriceFilter,
+      queryMatchesTextAndPrice
+    } from "/public/search-query.js";
+
     const dictionary = {
       en: {
         title: "Riven Sniper",
         onlineOnly: "Online only",
         includeOffline: "Include offline",
-        searchHelp: "Try: crit damage, seller name, <450p, online",
+        searchHelp: "Try: crit damage, seller name, <450p, >100p, online",
         addRiven: "Add Riven",
         add: "Add",
         delete: "Delete",
@@ -1132,6 +1181,7 @@
         weaponsTracked: "Weapons",
         trackedWeapons: "Tracked Weapons",
         rivenName: "Riven name",
+        minPrice: "Min price",
         maxPrice: "Max price",
         target: "Weapon name",
         positiveAttrs: "Positive attributes",
@@ -1175,7 +1225,7 @@
         title: "裂罅狙击",
         onlineOnly: "只看在线",
         includeOffline: "包含离线",
-        searchHelp: "试试：暴击伤害、卖家名、<450p、在线",
+        searchHelp: "试试：暴击伤害、卖家名、<450p、>100p、在线",
         addRiven: "新增裂罅",
         add: "新增",
         delete: "删除",
@@ -1186,6 +1236,7 @@
         weaponsTracked: "武器数",
         trackedWeapons: "已追踪武器",
         rivenName: "裂罅名称",
+        minPrice: "最低价",
         maxPrice: "最高价",
         target: "武器名称",
         positiveAttrs: "正面词条",
@@ -1588,29 +1639,6 @@
       return `${rivenWeaponFamily(riven.target)} ${generatedNameCore(riven.positives)}`;
     }
 
-    function priceNumber(price) {
-      return Number(String(price).replace(/[^\d.]/g, ""));
-    }
-
-    function queryTerms(query) {
-      return query.split(/\s+/).map(term => term.trim()).filter(Boolean);
-    }
-
-    function queryTermMatches(term, text, hit) {
-      const priceMatch = term.match(/^(<=|>=|<|>|=)?(\d+)\s*p?$/i);
-      if (priceMatch && hit) {
-        const [, operator = "=", rawValue] = priceMatch;
-        const wanted = Number(rawValue);
-        const actual = priceNumber(hit.price);
-        if (operator === "<") return actual < wanted;
-        if (operator === "<=") return actual <= wanted;
-        if (operator === ">") return actual > wanted;
-        if (operator === ">=") return actual >= wanted;
-        return actual === wanted;
-      }
-      return text.includes(term);
-    }
-
     function listingSearchText(hit, riven) {
       return [
         rivenWeaponFamily(riven.target),
@@ -1633,12 +1661,23 @@
 
     function queryMatchesListing(hit, riven, query) {
       if (!query) return true;
-      const text = listingSearchText(hit, riven);
-      return queryTerms(query).every(term => queryTermMatches(term, text, hit));
+      return queryMatchesTextAndPrice(query, listingSearchText(hit, riven), hit.price);
+    }
+
+    function hitWithinRivenPriceRange(hit, riven) {
+      const actual = priceNumber(hit.price);
+      if (normalizePlatPrice(riven.minPrice) && (!Number.isFinite(actual) || actual <= priceNumber(riven.minPrice))) return false;
+      if (normalizePlatPrice(riven.price) && (!Number.isFinite(actual) || actual >= priceNumber(riven.price))) return false;
+      return true;
+    }
+
+    function hitVisibleForRiven(hit, riven) {
+      return (!onlineOnly || hit.status === "online") && hitWithinRivenPriceRange(hit, riven);
     }
 
     function queryMatchesRiven(riven, query) {
       if (!query) return true;
+      const parsed = parseSearchQuery(query);
       const rivenText = [
         rivenWeaponFamily(riven.target),
         displayWeaponName(riven.target),
@@ -1646,14 +1685,15 @@
         generatedRivenName(riven),
         generatedNameCore(riven.positives),
         statSummary(riven),
+        displayPriceRange(riven),
+        riven.minPrice,
         riven.price
       ].join(" ").toLowerCase();
-      const terms = queryTerms(query);
-      const matchesRivenText = terms.every(term => queryTermMatches(term, rivenText, null));
-      if (matchesRivenText) return true;
+      if (parsed.terms.every(term => rivenText.includes(term)) && priceRangeMatchesFilters(parsed.priceFilters, riven)) return true;
+      if (parsed.terms.every(term => rivenText.includes(term)) && !queryHasPriceFilter(parsed)) return true;
       return listings
-        .filter(hit => hit.rivenId === riven.id && (!onlineOnly || hit.status === "online"))
-        .some(hit => queryMatchesListing(hit, riven, query));
+        .filter(hit => hit.rivenId === riven.id && hitVisibleForRiven(hit, riven))
+        .some(hit => queryMatchesListing(hit, riven, parsed));
     }
 
     function updateSearchHelp(hitCount, query) {
@@ -1662,7 +1702,7 @@
         node.textContent = t("searchHelp");
         return;
       }
-      node.textContent = lang === "zh" ? `当前裂罅匹配 ${hitCount} 条订单` : `${hitCount} matching listings for the selected Riven`;
+      node.textContent = lang === "zh" ? `当前搜索匹配 ${hitCount} 条订单` : `${hitCount} matching listings`;
     }
 
     function polarityLabel(value) {
@@ -1886,7 +1926,7 @@
         return groups;
       }, new Map());
 
-      document.querySelector("#rivenCount").textContent = `${rivens.length}`;
+      document.querySelector("#rivenCount").textContent = query ? `${filtered.length}/${rivens.length}` : `${rivens.length}`;
       if (!rivens.length) {
         document.querySelector("#rivenList").innerHTML = `<div class="empty">${t("noRivens")}</div>`;
         return;
@@ -1899,12 +1939,12 @@
           </div>
           <div class="weapon-rivens">
             ${group.map(riven => {
-              const hits = listings.filter(hit => hit.rivenId === riven.id && (!onlineOnly || hit.status === "online")).length;
+              const hits = listings.filter(hit => hit.rivenId === riven.id && hitVisibleForRiven(hit, riven)).length;
               return `
                 <button class="riven-item" data-id="${riven.id}" aria-pressed="${riven.id === selectedId}">
                   <strong>${escapeHtml(generatedNameCore(riven.positives))}</strong>
                   <small>${escapeHtml(statSummary(riven) || displayGeneratedRivenName(riven))}</small>
-                  <span class="riven-meta"><span>${escapeHtml(riven.price || "any")}</span><span>${hits} ${lang === "zh" ? "命中" : "hits"}</span></span>
+                  <span class="riven-meta"><span>${escapeHtml(displayPriceRange(riven) || "any")}</span><span>${hits} ${lang === "zh" ? "命中" : "hits"}</span></span>
                 </button>
               `;
             }).join("")}
@@ -1970,16 +2010,20 @@
     function renderHits() {
       const active = activeRiven();
       const query = document.querySelector("#search").value.trim().toLowerCase();
-      if (!active) {
+      if (!active && !query) {
         visibleHitCount = 0;
         updateSearchHelp(0, query);
         updateSourceStatus();
         document.querySelector("#hits").innerHTML = `<div class="empty">${t("noRivens")}</div>`;
         return;
       }
-      const hits = listings
-        .filter(hit => hit.rivenId === active.id && (!onlineOnly || hit.status === "online") && queryMatchesListing(hit, active, query))
-        .map(hit => ({ hit, riven: active }));
+      const hits = query
+        ? listings
+          .map(hit => ({ hit, riven: rivens.find(riven => riven.id === hit.rivenId) }))
+          .filter(row => row.riven && hitVisibleForRiven(row.hit, row.riven) && queryMatchesListing(row.hit, row.riven, query))
+        : listings
+          .filter(hit => hit.rivenId === active.id && hitVisibleForRiven(hit, active))
+          .map(hit => ({ hit, riven: active }));
       visibleHitCount = hits.length;
       updateSearchHelp(hits.length, query);
       updateSourceStatus();
@@ -2047,7 +2091,8 @@
     function allVisibleHits() {
       return listings
         .filter(hit => hit.status === "online")
-        .map(hit => ({ hit, riven: rivens.find(item => item.id === hit.rivenId) || { target: hit.title.split(" ")[0] } }));
+        .map(hit => ({ hit, riven: rivens.find(item => item.id === hit.rivenId) || { target: hit.title.split(" ")[0] } }))
+        .filter(row => !row.riven.id || hitWithinRivenPriceRange(row.hit, row.riven));
     }
 
     function sortedHits(rows) {
@@ -2172,6 +2217,7 @@
       modalWeaponFamily = "";
       fillAllStatSelects();
       document.querySelector("#modalTarget").value = "";
+      document.querySelector("#modalMinPrice").value = "";
       document.querySelector("#modalPrice").value = "";
       document.querySelector("#modalPositive1").value = "critical_chance";
       document.querySelector("#modalPositive2").value = "critical_damage";
@@ -2192,12 +2238,18 @@
       document.querySelector("#addModal").hidden = true;
     }
 
+    function sanitizePriceInput(event) {
+      const input = event?.target || document.querySelector("#modalPrice");
+      input.value = input.value.replace(/[^\d]/g, "");
+    }
+
     async function createRiven() {
       const typedTarget = document.querySelector("#modalTarget").value.trim();
       const target = typedTarget ? validRivenWeaponFamily(typedTarget, modalWeaponFamily) : "";
       const body = {
         target,
-        price: document.querySelector("#modalPrice").value.trim(),
+        minPrice: normalizePlatPrice(document.querySelector("#modalMinPrice").value),
+        price: normalizePlatPrice(document.querySelector("#modalPrice").value),
         positives: [document.querySelector("#modalPositive1").value, document.querySelector("#modalPositive2").value, document.querySelector("#modalPositive3").value],
         negative: document.querySelector("#modalNegative").value,
         polarity: document.querySelector("#modalPolarity").value,
@@ -2250,6 +2302,8 @@
     });
 
     document.querySelector("#search").addEventListener("input", render);
+    document.querySelector("#modalMinPrice").addEventListener("input", sanitizePriceInput);
+    document.querySelector("#modalPrice").addEventListener("input", sanitizePriceInput);
     document.querySelector("#activeRivensCard").addEventListener("click", openActiveRivensRoute);
     document.querySelector("#onlineHitsCard").addEventListener("click", openHitsModal);
     document.querySelector("#weaponsCard").addEventListener("click", openWeaponsModal);

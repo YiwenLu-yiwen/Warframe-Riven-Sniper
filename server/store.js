@@ -26,6 +26,8 @@ function loadRivens() {
     nextId = Number.isInteger(body.nextId) && body.nextId > 0 ? body.nextId : 1;
     rivens = Array.isArray(body.rivens) ? body.rivens.map(riven => ({
       ...riven,
+      minPrice: normalizePrice(riven.minPrice),
+      price: normalizePrice(riven.price),
       positives: normalizeList(riven.positives)
     })) : [];
   } catch {
@@ -44,17 +46,28 @@ function normalizeList(value) {
   return Array.isArray(value) ? value.slice(0, 3).map(item => String(item || "").trim()) : [];
 }
 
+function normalizePrice(value) {
+  const price = String(value || "").replace(/[^\d]/g, "");
+  return price ? `${price}p` : "";
+}
+
 export function validateRivenInput(input = {}) {
   const target = String(input.target || "").trim();
   if (!target) return { ok: false, message: "Weapon target is required." };
   const weapon = findWeaponCatalogEntry(target);
   if (!weapon) return { ok: false, message: "Choose a Riven weapon family from the catalog." };
+  const minPrice = normalizePrice(input.minPrice);
+  const price = normalizePrice(input.price);
+  if (minPrice && price && Number(minPrice.replace(/[^\d]/g, "")) > Number(price.replace(/[^\d]/g, ""))) {
+    return { ok: false, message: "Minimum price cannot be larger than max price." };
+  }
 
   return {
     ok: true,
     value: {
       target: weapon.family,
-      price: String(input.price || "").trim(),
+      minPrice,
+      price,
       positives: normalizeList(input.positives),
       negative: String(input.negative || "").trim(),
       polarity: String(input.polarity || "Any").trim(),
