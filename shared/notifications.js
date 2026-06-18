@@ -99,11 +99,11 @@ export function syncNotificationMatchState(state = {}, nextSignature = "") {
   };
 }
 
-export function resetNotificationMatchState(state = {}, nextSignature = "") {
+export function resetNotificationMatchState(state = {}, nextSignature = "", { initialized = false } = {}) {
   const pruned = pruneNotificationState(state);
   return {
     ...pruned,
-    initialized: false,
+    initialized: Boolean(initialized),
     seenHitKeys: [],
     dismissedHitKeys: [],
     dismissedEventIds: [],

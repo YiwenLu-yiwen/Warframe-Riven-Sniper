@@ -2311,8 +2311,8 @@
       }
     }
 
-    function resetNotificationsForRivenChange() {
-      notificationState = resetNotificationMatchState(notificationState);
+    function resetNotificationsForRivenChange({ notifyCurrentHits = false } = {}) {
+      notificationState = resetNotificationMatchState(notificationState, "", { initialized: notifyCurrentHits });
       persistNotificationState();
       renderNotificationUI();
     }
@@ -3569,7 +3569,7 @@
         ? await apiJson(`/api/rivens/${encodeURIComponent(editingRivenId)}`, { method: "PUT", body: JSON.stringify(body) })
         : await apiJson("/api/rivens", { method: "POST", body: JSON.stringify(body) });
       upsertLocalRiven(result.data);
-      resetNotificationsForRivenChange();
+      resetNotificationsForRivenChange({ notifyCurrentHits: true });
       closeModal();
       render();
       refreshMarketInBackground({ force: true });
