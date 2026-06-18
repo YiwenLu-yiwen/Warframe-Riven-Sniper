@@ -1326,7 +1326,26 @@
       zoom: ["Hera", "Lis"]
     };
 
-    let lang = "zh";
+    const languageStorageKey = "warframe-riven-sniper-language";
+
+    function storedLanguage() {
+      try {
+        const value = window.localStorage?.getItem(languageStorageKey);
+        return value === "en" || value === "zh" ? value : "zh";
+      } catch {
+        return "zh";
+      }
+    }
+
+    function storeLanguage(value) {
+      try {
+        window.localStorage?.setItem(languageStorageKey, value);
+      } catch {
+        // Ignore unavailable storage; language still works for the current session.
+      }
+    }
+
+    let lang = storedLanguage();
     let onlineOnly = true;
     let selectedId = null;
     let rivens = [];
@@ -1765,7 +1784,12 @@
 
     function renderLanguage() {
       document.documentElement.lang = lang === "zh" ? "zh-Hans" : "en";
+      document.title = lang === "zh" ? "Warframe 裂罅狙击 v1.0" : "Warframe Riven Sniper v1.0";
       document.querySelector("#search").placeholder = lang === "zh" ? "搜索武器、词条、卖家、价格、时间" : "Search weapon, stat, seller, price, time";
+      document.querySelector("#search").setAttribute("aria-label", lang === "zh" ? "智能搜索" : "Smart search");
+      document.querySelectorAll("[data-lang]").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.lang === lang));
+      });
       document.querySelectorAll("[data-i18n]").forEach(node => {
         node.textContent = t(node.dataset.i18n);
       });
@@ -2205,7 +2229,7 @@
     document.querySelectorAll("[data-lang]").forEach(button => {
       button.addEventListener("click", async () => {
         lang = button.dataset.lang;
-        document.querySelectorAll("[data-lang]").forEach(item => item.setAttribute("aria-pressed", item === button));
+        storeLanguage(lang);
         await fetchBackendWeaponCatalog().catch(() => {});
         render();
       });

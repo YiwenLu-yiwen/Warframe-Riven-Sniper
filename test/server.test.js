@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -21,6 +21,17 @@ import { createRiven, deleteRiven, listRivens, resetRivens } from "../server/sto
 import { configureRivenStore } from "../server/store.js";
 
 configureRivenStore({ persist: false });
+
+describe("Frontend preferences", () => {
+  it("persists the selected language across page reloads", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /languageStorageKey = "warframe-riven-sniper-language"/);
+    assert.match(html, /let lang = storedLanguage\(\);/);
+    assert.match(html, /storeLanguage\(lang\);/);
+    assert.match(html, /button\.dataset\.lang === lang/);
+  });
+});
 
 describe("Riven weapon catalog", () => {
   it("exposes a broad unique catalog of Riven-eligible weapon families", () => {
