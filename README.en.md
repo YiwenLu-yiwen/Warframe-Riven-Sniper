@@ -21,6 +21,10 @@
   <img alt="English" src="https://img.shields.io/badge/README-English-d6a84c?style=for-the-badge">
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/warframe-riven-sniper-en.png" alt="Warframe Riven Sniper English UI screenshot" width="960">
+</p>
+
 A small web app for tracking Warframe Riven auction listings by weapon family, selected positive stats, optional negative stat, seller status, price, and listing time.
 
 The app keeps the workflow simple: create one or more Riven watches under a weapon, refresh Warframe.Market auction data conservatively, and surface matching reachable listings with a copy-ready in-game whisper.

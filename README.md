@@ -21,6 +21,10 @@
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/README-English-d6a84c?style=for-the-badge"></a>
 </p>
 
+<p align="center">
+  <img src="assets/screenshots/warframe-riven-sniper-zh.png" alt="Warframe 裂罅狙击中文界面截图" width="960">
+</p>
+
 这是一个用于追踪 Warframe 裂罅拍卖订单的小型网页应用。你可以按武器系列、正面词条、可选负面词条、卖家状态、价格和订单时间来管理裂罅狙击目标。
 
 应用的核心流程很简单：在某个武器下创建一个或多个裂罅监控项，保守地刷新 Warframe.Market 拍卖数据，然后把匹配的可联系卖家订单展示出来，并提供可直接复制到游戏内私聊的消息。
