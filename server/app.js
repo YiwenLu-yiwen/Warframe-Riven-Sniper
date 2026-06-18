@@ -3,7 +3,7 @@ import { stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { enrichRiven, getRivenAnalysis, health, listHits, listLiveWeapons, listStats } from "./domain.js";
 import { fetchMarketHits, fetchMarketWeaponFamilies } from "./market.js";
-import { createRiven, deleteRiven, listRivens } from "./store.js";
+import { createRiven, deleteRiven, listRivens, updateRiven } from "./store.js";
 
 const root = resolve(".");
 const htmlPath = join(root, "public", "index.html");
@@ -108,9 +108,20 @@ export async function handleRequest(req, res) {
     }
   }
 
-  const rivenDeleteMatch = url.pathname.match(/^\/api\/rivens\/([^/]+)$/);
-  if (rivenDeleteMatch && req.method === "DELETE") {
-    const deleted = deleteRiven(decodeURIComponent(rivenDeleteMatch[1]));
+  const rivenMatch = url.pathname.match(/^\/api\/rivens\/([^/]+)$/);
+  if (rivenMatch && (req.method === "PUT" || req.method === "PATCH")) {
+    try {
+      const data = updateRiven(decodeURIComponent(rivenMatch[1]), await readJson(req));
+      if (!data) return sendError(res, 404, "RIVEN_NOT_FOUND", "Riven watch not found.");
+      return sendJson(res, 200, { data });
+    } catch (error) {
+      if (error.code === "VALIDATION_ERROR") return sendError(res, 422, "VALIDATION_ERROR", error.message);
+      return sendError(res, 400, "INVALID_JSON", "Request body must be valid JSON.");
+    }
+  }
+
+  if (rivenMatch && req.method === "DELETE") {
+    const deleted = deleteRiven(decodeURIComponent(rivenMatch[1]));
     if (!deleted) return sendError(res, 404, "RIVEN_NOT_FOUND", "Riven watch not found.");
     return sendNoContent(res);
   }
@@ -120,7 +131,8 @@ export async function handleRequest(req, res) {
       const result = await listHits({
         scope: url.searchParams.get("scope") || "online",
         rivenId: url.searchParams.get("rivenId") || undefined,
-        force: url.searchParams.get("force") === "true"
+        force: url.searchParams.get("force") === "true",
+        refreshMs: url.searchParams.get("refreshMs") || undefined
       });
       return sendJson(res, 200, result);
     } catch (error) {

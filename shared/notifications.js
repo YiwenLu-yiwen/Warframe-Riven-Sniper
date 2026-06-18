@@ -1,6 +1,7 @@
 export const MAX_NOTIFICATION_EVENTS = 30;
 export const MAX_SEEN_HIT_KEYS = 500;
 export const MAX_EVENTS_PER_REFRESH = 8;
+export const MAX_NOTIFICATION_AGE_MS = 6 * 60 * 60 * 1000;
 const HIT_NOTIFICATION_TYPES = new Set(["low_price", "new_online_hit"]);
 
 function priceNumber(price) {
@@ -34,6 +35,22 @@ export function hitNotificationKey(hit = {}) {
   ].map(value => String(value || "").trim()).join("::");
 }
 
+export function notificationMessageKey(event = {}) {
+  const type = String(event.type || "");
+  if (event.hitKey) return `hit:${event.hitKey}`;
+  if (type === "rate_limited") return "system:rate_limited";
+  if (type === "browser_notice_enabled") return "system:browser_notice_enabled";
+  return [
+    "message",
+    type,
+    event.listingName || event.rivenName || event.title || "",
+    event.sellerName || "",
+    event.price || "",
+    event.threshold || "",
+    event.body || ""
+  ].map(value => String(value || "").trim()).join("::");
+}
+
 export function createNotificationMatchSignature(rivens = []) {
   const watches = rivens.map(riven => ({
     id: String(riven.id || ""),
@@ -48,10 +65,18 @@ export function createNotificationMatchSignature(rivens = []) {
 }
 
 export function pruneNotificationState(state = {}) {
+  const now = Date.now();
+  const freshEvents = (state.events || []).filter(event => {
+    const createdAt = Date.parse(event.createdAt || "");
+    return !Number.isFinite(createdAt) || now - createdAt <= MAX_NOTIFICATION_AGE_MS;
+  });
   return {
     initialized: Boolean(state.initialized),
     seenHitKeys: boundedUnique(state.seenHitKeys || [], MAX_SEEN_HIT_KEYS),
-    events: (state.events || []).slice(Math.max(0, (state.events || []).length - MAX_NOTIFICATION_EVENTS)),
+    dismissedHitKeys: boundedUnique(state.dismissedHitKeys || [], MAX_SEEN_HIT_KEYS),
+    dismissedEventIds: boundedUnique(state.dismissedEventIds || [], MAX_SEEN_HIT_KEYS),
+    dismissedMessageKeys: boundedUnique(state.dismissedMessageKeys || [], MAX_SEEN_HIT_KEYS),
+    events: freshEvents.slice(Math.max(0, freshEvents.length - MAX_NOTIFICATION_EVENTS)),
     rateLimitKey: String(state.rateLimitKey || ""),
     matchSignature: String(state.matchSignature || "")
   };
@@ -71,6 +96,58 @@ export function syncNotificationMatchState(state = {}, nextSignature = "") {
   return {
     ...pruned,
     matchSignature: signature
+  };
+}
+
+export function resetNotificationMatchState(state = {}, nextSignature = "") {
+  const pruned = pruneNotificationState(state);
+  return {
+    ...pruned,
+    initialized: false,
+    seenHitKeys: [],
+    dismissedHitKeys: [],
+    dismissedEventIds: [],
+    dismissedMessageKeys: [],
+    events: pruned.events.filter(event => !HIT_NOTIFICATION_TYPES.has(event.type)),
+    matchSignature: String(nextSignature || "")
+  };
+}
+
+export function dismissNotificationEvent(state = {}, id = "") {
+  const pruned = pruneNotificationState(state);
+  const event = pruned.events.find(item => item.id === id);
+  const dismissedHitKeys = event?.hitKey
+    ? boundedUnique([...pruned.dismissedHitKeys, event.hitKey], MAX_SEEN_HIT_KEYS)
+    : pruned.dismissedHitKeys;
+  const dismissedEventIds = id
+    ? boundedUnique([...pruned.dismissedEventIds, id], MAX_SEEN_HIT_KEYS)
+    : pruned.dismissedEventIds;
+  const dismissedMessageKeys = event
+    ? boundedUnique([...pruned.dismissedMessageKeys, notificationMessageKey(event)], MAX_SEEN_HIT_KEYS)
+    : pruned.dismissedMessageKeys;
+  return {
+    ...pruned,
+    dismissedHitKeys,
+    dismissedEventIds,
+    dismissedMessageKeys,
+    rateLimitKey: event?.type === "rate_limited" ? event.id : pruned.rateLimitKey,
+    events: pruned.events.filter(item => item.id !== id)
+  };
+}
+
+export function clearNotificationEvents(state = {}) {
+  const pruned = pruneNotificationState(state);
+  const visibleHitKeys = pruned.events.map(event => event.hitKey).filter(Boolean);
+  const visibleEventIds = pruned.events.map(event => event.id).filter(Boolean);
+  const visibleMessageKeys = pruned.events.map(notificationMessageKey).filter(Boolean);
+  const rateLimitEvent = pruned.events.find(event => event.type === "rate_limited");
+  return {
+    ...pruned,
+    dismissedHitKeys: boundedUnique([...pruned.dismissedHitKeys, ...visibleHitKeys], MAX_SEEN_HIT_KEYS),
+    dismissedEventIds: boundedUnique([...pruned.dismissedEventIds, ...visibleEventIds], MAX_SEEN_HIT_KEYS),
+    dismissedMessageKeys: boundedUnique([...pruned.dismissedMessageKeys, ...visibleMessageKeys], MAX_SEEN_HIT_KEYS),
+    rateLimitKey: rateLimitEvent?.id || pruned.rateLimitKey,
+    events: []
   };
 }
 
@@ -198,6 +275,9 @@ export function collectHitNotifications({
   hits = [],
   rivens = [],
   seenHitKeys = [],
+  dismissedHitKeys = [],
+  dismissedEventIds = [],
+  dismissedMessageKeys = [],
   initialized = false,
   lang = "en",
   limit = MAX_EVENTS_PER_REFRESH
@@ -205,7 +285,7 @@ export function collectHitNotifications({
   const rivenById = new Map(rivens.map(riven => [riven.id, riven]));
   const matchedOnlineHits = hits.filter(hit => hit.status === "online" && rivenById.has(hit.rivenId));
   const currentKeys = matchedOnlineHits.map(hitNotificationKey).filter(Boolean);
-  const seen = new Set(seenHitKeys);
+  const seen = new Set([...seenHitKeys, ...dismissedHitKeys]);
   const nextSeenHitKeys = boundedUnique([...seenHitKeys, ...currentKeys], MAX_SEEN_HIT_KEYS);
 
   if (!initialized) {
@@ -219,7 +299,10 @@ export function collectHitNotifications({
     const riven = rivenById.get(hit.rivenId) || {};
     const type = classifyHit(hit, riven);
     if (!type) continue;
-    events.push(hitEvent({ hit, riven, type, lang }));
+    const event = hitEvent({ hit, riven, type, lang });
+    if (dismissedEventIds.includes(event.id)) continue;
+    if (dismissedMessageKeys.includes(notificationMessageKey(event))) continue;
+    events.push(event);
     seen.add(key);
     if (events.length >= limit) break;
   }

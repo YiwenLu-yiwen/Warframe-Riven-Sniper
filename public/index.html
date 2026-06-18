@@ -56,14 +56,42 @@
     }
 
     .generated-name {
-      min-height: 40px;
+      min-height: 54px;
       border: 1px solid var(--line);
       background: #0e0c09;
       border-radius: 4px;
-      padding: 9px 10px;
-      display: flex;
-      align-items: center;
+      padding: 10px 12px;
+      display: grid;
+      align-content: center;
+      gap: 2px;
       color: var(--text);
+      min-width: 0;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .generated-name span {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .generated-weapon {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .generated-core {
+      color: var(--text);
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .name-preview-field {
+      padding-top: 2px;
     }
 
     h1, h2, h3, p { margin: 0; }
@@ -241,6 +269,11 @@
       background: rgba(210,107,86,.12);
     }
 
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+    }
+
     .metrics-bar {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -370,7 +403,8 @@
     .metric-button:focus-visible,
     .copy-button:focus-visible,
     .weapon-route:focus-visible,
-    .notice-summary:focus-visible {
+    .notice-summary:focus-visible,
+    .refresh-control:focus-within {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
@@ -405,6 +439,52 @@
       align-items: center;
       gap: 8px;
       min-width: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .refresh-control {
+      min-height: 30px;
+      border: 1px solid var(--line);
+      background: #0e0c09;
+      color: var(--muted);
+      display: inline-grid;
+      grid-template-columns: auto 54px auto;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .refresh-control input {
+      min-height: 22px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      color: var(--text);
+      padding: 0;
+      text-align: right;
+      font-weight: 800;
+    }
+
+    .refresh-control span:last-child {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
+    .refresh-risk {
+      border: 1px solid rgba(210,107,86,.52);
+      background: rgba(210,107,86,.1);
+      color: #ffd8cf;
+      padding: 5px 8px;
+      font-size: 12px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .refresh-risk[hidden] {
+      display: none;
     }
 
     .sort-header {
@@ -615,7 +695,7 @@
       padding: 12px;
       border-top: 1px solid var(--line);
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 8px;
     }
 
@@ -958,10 +1038,12 @@
     .modal-panel {
       width: min(860px, 100%);
       max-height: min(780px, calc(100vh - 48px));
-      overflow: auto;
+      overflow: hidden;
       border: 1px solid var(--line);
       background: #1a1711;
       box-shadow: 0 20px 70px rgba(0,0,0,.45);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
 
     .modal-panel.wide-panel {
@@ -976,9 +1058,14 @@
       display: flex;
       justify-content: space-between;
       gap: 12px;
-      align-items: center;
+      align-items: flex-start;
       padding: 14px;
       border-bottom: 1px solid var(--line);
+      min-width: 0;
+    }
+
+    .modal-head > div {
+      min-width: 0;
     }
 
     .modal-tools {
@@ -998,12 +1085,23 @@
 
     .modal-head h2 {
       font-size: 18px;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .modal-head .sub {
+      margin-top: 4px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     .modal-body {
       padding: 14px;
       display: grid;
       gap: 12px;
+      min-height: 0;
+      overflow: auto;
+      scroll-padding-bottom: 18px;
     }
 
     .confirm-body {
@@ -1043,6 +1141,11 @@
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
       gap: 12px;
+      min-width: 0;
+    }
+
+    .modal-grid > * {
+      min-width: 0;
     }
 
     .modal-actions {
@@ -1050,7 +1153,10 @@
       justify-content: flex-end;
       gap: 8px;
       border-top: 1px solid var(--line);
+      background: #1a1711;
       padding: 14px;
+      min-height: 69px;
+      flex-wrap: wrap;
     }
 
     .hit-stack {
@@ -1081,6 +1187,10 @@
     .notice-item.success .notice-dot { background: var(--green); }
     .notice-item.wait .notice-dot { background: var(--blue); }
 
+    .notice-item[data-can-locate="true"] {
+      cursor: pointer;
+    }
+
     .notice-item strong,
     .notice-item span {
       min-width: 0;
@@ -1089,6 +1199,34 @@
     .notice-item small {
       color: var(--muted);
       white-space: nowrap;
+    }
+
+    .notice-item-main {
+      display: grid;
+      gap: 3px;
+    }
+
+    .notice-item-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      min-width: 116px;
+    }
+
+    .notice-delete {
+      width: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .hit-focus {
+      outline: 2px solid rgba(214,168,76,.8);
+      outline-offset: 3px;
+      transition: outline-color .2s ease;
     }
 
     .toast-stack {
@@ -1230,9 +1368,32 @@
       .editor, .modal-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
       .market-details, .stat-grid { grid-template-columns: 1fr; }
       .hit-line { grid-template-columns: 1fr; }
+      .notice-item { grid-template-columns: 10px minmax(0, 1fr); }
+      .notice-item-actions { grid-column: 2; justify-content: flex-start; }
     }
 
     @media (max-width: 620px) {
+      .modal {
+        padding: 10px;
+      }
+
+      .modal-panel {
+        max-height: calc(100vh - 20px);
+      }
+
+      .modal-head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .generated-name {
+        font-size: 14px;
+      }
+
+      .modal-actions button {
+        flex: 1 1 140px;
+      }
+
       .metrics-bar,
       .side-actions,
       .editor-actions {
@@ -1300,6 +1461,7 @@
         <div class="riven-list" id="rivenList"></div>
         <div class="side-actions">
           <button class="primary" id="addSide" data-i18n="add">新增</button>
+          <button class="ghost" id="editSide" data-i18n="modify">修改</button>
           <button class="danger" id="deleteSide" data-i18n="delete">删除</button>
         </div>
       </aside>
@@ -1310,6 +1472,12 @@
             <span data-i18n="webHits">网页命中</span>
             <div class="section-tools">
               <span class="count" id="sourceStatus">0 条订单</span>
+              <label class="refresh-control" for="refreshSeconds">
+                <span data-i18n="refreshLabel">刷新</span>
+                <input id="refreshSeconds" type="number" min="10" step="10" inputmode="numeric" value="120" aria-describedby="refreshRisk">
+                <span>s</span>
+              </label>
+              <span class="refresh-risk" id="refreshRisk" data-i18n="refreshRisk" hidden>高风险</span>
             </div>
           </div>
           <div class="table">
@@ -1345,7 +1513,7 @@
       <div class="modal-head">
         <div>
           <h2 id="modalTitle" data-i18n="createRiven">创建裂罅</h2>
-          <p class="sub" data-i18n="createHint">选择武器和词条；裂罅名称会根据正面词条自动生成。</p>
+          <p class="sub" id="modalHint" data-i18n="createHint">选择武器和词条；裂罅名称会根据正面词条自动生成。</p>
         </div>
         <button class="ghost" id="closeModal" data-i18n="close">关闭</button>
       </div>
@@ -1420,7 +1588,7 @@
               </div>
             </div>
           </div>
-          <div class="field span-12">
+          <div class="field span-12 name-preview-field">
             <label for="modalName" data-i18n="rivenName">裂罅名称</label>
             <div class="generated-name" id="modalName" aria-live="polite"></div>
           </div>
@@ -1519,11 +1687,16 @@
       statTierMark
     } from "/shared/riven-analysis.js";
     import {
+      clearNotificationEvents,
       collectHitNotifications,
       createNotificationMatchSignature,
       createRateLimitNotification,
+      dismissNotificationEvent,
       formatNotificationEvent,
+      hitNotificationKey,
+      notificationMessageKey,
       pruneNotificationState,
+      resetNotificationMatchState,
       syncNotificationMatchState
     } from "/shared/notifications.js";
 
@@ -1535,6 +1708,7 @@
         searchHelp: "Try: crit damage, seller name, <450p, >100p, online",
         addRiven: "Add Riven",
         add: "Add",
+        modify: "Modify",
         delete: "Delete",
         rivens: "Rivens",
         activeRivens: "Active Rivens",
@@ -1573,12 +1747,16 @@
         refreshing: "Refreshing live market data...",
         rateLimited: "rate limited, waiting",
         marketUnavailable: "market unavailable, retrying",
-        refreshEvery: "refreshes every 2 min",
+        refreshEvery: "refreshes every {seconds}s",
+        refreshLabel: "Refresh",
+        refreshRisk: "High risk",
         weapon: "Weapon",
         rivenUnit: "Riven",
         rivenUnits: "Rivens",
         createRiven: "Create Riven",
         createHint: "Choose a weapon and stats; the Riven name is generated from positive attributes.",
+        editRiven: "Modify Riven",
+        editHint: "Adjust this watch; the new match rules replace the current Riven.",
         deleteConfirmTitle: "Delete Riven?",
         deleteConfirmHint: "This removes it from your local watch list.",
         deleteConfirmBody: "Do you want to delete this Riven watch?",
@@ -1594,7 +1772,10 @@
         noticeIdle: "Waiting for new online listings, low-price hits, or rate-limit waits.",
         noticeCount: "notices",
         noticeEmpty: "No notices yet.",
+        noticeDismiss: "Dismiss notice",
+        noticeGone: "This listing is no longer visible.",
         enableBrowserNotices: "Enable browser notices",
+        browserNoticesPending: "Allow browser notices",
         browserNoticesOn: "Browser notices on",
         browserNoticesBlocked: "Browser notices blocked",
         browserNoticesUnsupported: "Browser notices unavailable",
@@ -1606,7 +1787,8 @@
         clearNotices: "Clear",
         close: "Close",
         cancel: "Cancel",
-        create: "Create"
+        create: "Create",
+        saveChanges: "Save"
       },
       zh: {
         title: "裂罅狙击",
@@ -1615,6 +1797,7 @@
         searchHelp: "试试：暴击伤害、卖家名、<450p、>100p、在线",
         addRiven: "新增裂罅",
         add: "新增",
+        modify: "修改",
         delete: "删除",
         rivens: "裂罅",
         activeRivens: "启用裂罅",
@@ -1653,12 +1836,16 @@
         refreshing: "正在刷新实时市场数据...",
         rateLimited: "限流，等待",
         marketUnavailable: "市场暂不可用，重试",
-        refreshEvery: "每 2 分钟刷新",
+        refreshEvery: "每 {seconds}s 刷新",
+        refreshLabel: "刷新",
+        refreshRisk: "高风险",
         weapon: "武器",
         rivenUnit: "条裂罅",
         rivenUnits: "条裂罅",
         createRiven: "创建裂罅",
         createHint: "选择武器和词条；裂罅名称会根据正面词条自动生成。",
+        editRiven: "修改裂罅",
+        editHint: "调整这条监控；保存后会替换当前裂罅的匹配规则。",
         deleteConfirmTitle: "确认删除裂罅",
         deleteConfirmHint: "这个操作会从本地监控列表移除。",
         deleteConfirmBody: "确定要删除这条裂罅吗？",
@@ -1674,7 +1861,10 @@
         noticeIdle: "等待新的在线订单、低价命中或限流等待。",
         noticeCount: "条通知",
         noticeEmpty: "暂无通知。",
+        noticeDismiss: "删除通知",
+        noticeGone: "这条订单当前不可见。",
         enableBrowserNotices: "启用浏览器通知",
+        browserNoticesPending: "允许浏览器通知",
         browserNoticesOn: "浏览器通知已启用",
         browserNoticesBlocked: "浏览器通知被阻止",
         browserNoticesUnsupported: "浏览器通知不可用",
@@ -1686,7 +1876,8 @@
         clearNotices: "清空",
         close: "关闭",
         cancel: "取消",
-        create: "创建"
+        create: "创建",
+        saveChanges: "保存"
       }
     };
 
@@ -1793,6 +1984,9 @@
     const notificationStorageKey = "warframe-riven-sniper-notifications";
     const browserNotificationStorageKey = "warframe-riven-sniper-browser-notifications";
     const soundNotificationStorageKey = "warframe-riven-sniper-notification-sound";
+    const refreshIntervalStorageKey = "warframe-riven-sniper-refresh-seconds";
+    const defaultRefreshSeconds = 120;
+    const minimumRefreshSeconds = 10;
 
     function storedLanguage() {
       try {
@@ -1811,6 +2005,28 @@
       }
     }
 
+    function normalizeRefreshSeconds(value) {
+      const numeric = Number(String(value || "").replace(/[^\d]/g, ""));
+      if (!Number.isFinite(numeric) || numeric <= 0) return defaultRefreshSeconds;
+      return Math.max(minimumRefreshSeconds, Math.floor(numeric));
+    }
+
+    function storedRefreshSeconds() {
+      try {
+        return normalizeRefreshSeconds(window.localStorage?.getItem(refreshIntervalStorageKey) || defaultRefreshSeconds);
+      } catch {
+        return defaultRefreshSeconds;
+      }
+    }
+
+    function storeRefreshSeconds(value) {
+      try {
+        window.localStorage?.setItem(refreshIntervalStorageKey, String(normalizeRefreshSeconds(value)));
+      } catch {
+        // Ignore unavailable storage; refresh timing still works for the current session.
+      }
+    }
+
     function readJsonStorage(key, fallback) {
       try {
         const raw = window.localStorage?.getItem(key);
@@ -1825,6 +2041,14 @@
         window.localStorage?.setItem(key, JSON.stringify(value));
       } catch {
         // Ignore unavailable storage; notifications still work for the current session.
+      }
+    }
+
+    function removeStorageItem(key) {
+      try {
+        window.localStorage?.removeItem(key);
+      } catch {
+        // Ignore unavailable storage; the current session state still works.
       }
     }
 
@@ -1861,20 +2085,54 @@
     let selectedId = null;
     let rivens = [];
     let listings = [];
-    let marketMeta = { refreshIntervalMs: 120000, nextRefreshInMs: 120000 };
+    let refreshIntervalSeconds = storedRefreshSeconds();
+    let marketMeta = { refreshIntervalMs: refreshIntervalSeconds * 1000, nextRefreshInMs: refreshIntervalSeconds * 1000 };
     let marketMetaReceivedAt = Date.now();
     let visibleHitCount = 0;
     let hitSort = "priceAsc";
     let refreshTimer = null;
     const hitAnalysisCache = new Map();
     let notificationState = pruneNotificationState(readJsonStorage(notificationStorageKey, {}));
-    let browserNotificationsEnabled = readBooleanStorage(browserNotificationStorageKey, false);
-    let notificationSoundEnabled = readBooleanStorage(soundNotificationStorageKey, browserNotificationsEnabled);
+    let browserNotificationsEnabled = readBooleanStorage(browserNotificationStorageKey, true);
+    let notificationSoundEnabled = readBooleanStorage(soundNotificationStorageKey, true);
     let noticeAudioContext = null;
     let toastTimer = null;
 
     function t(key) {
       return dictionary[lang][key] || key;
+    }
+
+    function refreshIntervalMs() {
+      return refreshIntervalSeconds * 1000;
+    }
+
+    function refreshEveryText() {
+      return t("refreshEvery").replace("{seconds}", String(refreshIntervalSeconds));
+    }
+
+    function updateRefreshControl() {
+      const input = document.querySelector("#refreshSeconds");
+      const risk = document.querySelector("#refreshRisk");
+      if (input && document.activeElement !== input) input.value = String(refreshIntervalSeconds);
+      if (risk) risk.hidden = refreshIntervalSeconds >= defaultRefreshSeconds;
+    }
+
+    function setRefreshIntervalSeconds(value, { reschedule = true } = {}) {
+      refreshIntervalSeconds = normalizeRefreshSeconds(value);
+      storeRefreshSeconds(refreshIntervalSeconds);
+      marketMeta = {
+        ...marketMeta,
+        refreshIntervalMs: refreshIntervalMs(),
+        nextRefreshInMs: Math.min(Number(marketMeta.nextRefreshInMs || refreshIntervalMs()), refreshIntervalMs())
+      };
+      marketMetaReceivedAt = Date.now();
+      updateRefreshControl();
+      updateSourceStatus();
+      if (reschedule) scheduleMarketRefresh(marketMeta.nextRefreshInMs);
+    }
+
+    function textForLang(key, targetLang = lang) {
+      return dictionary[targetLang]?.[key] || key;
     }
 
     function humanizeStatKey(value) {
@@ -1913,7 +2171,7 @@
       return `${number} ${summary.dots}`;
     }
 
-    function analysisForTarget(target, positives = [], negative = "") {
+    function analysisForTarget(target, positives = [], negative = "", analysisLang = lang) {
       const family = validRivenWeaponFamily(target, "");
       if (!family) return null;
       const meta = weaponMeta[family] || {};
@@ -1924,7 +2182,7 @@
         positives,
         negative,
         statCatalog,
-        lang
+        lang: analysisLang
       });
     }
 
@@ -1933,26 +2191,31 @@
       return `<span class="analysis-chip tier-${row.tier.toLowerCase()}" title="${escapeHtml(`${row.sign}${row.label} ${mark}`)}">${escapeHtml(`${row.sign}${row.label}`)} <strong>${escapeHtml(mark)}</strong></span>`;
     }
 
+    function displayWeaponNameForLang(family, targetLang = lang) {
+      const clean = rivenWeaponFamily(family);
+      return targetLang === "zh" && weaponMeta[clean]?.zh ? weaponMeta[clean].zh : clean;
+    }
+
     function weaponDispositionLine(weapon) {
-      const analysis = analysisForTarget(weapon);
+      const analysis = analysisForTarget(weapon, [], "", lang);
       if (!analysis) return `${t("disposition")} ${lang === "zh" ? "加载中" : "loading"}`;
       return `${t("disposition")} ${dispositionText(analysis.disposition)}`;
     }
 
-    function renderAnalysisBlock(analysis) {
-      if (!analysis) return `<div class="analysis-meta">${t("noAnalysis")}</div>`;
+    function renderAnalysisBlock(analysis, analysisLang = lang) {
+      if (!analysis) return `<div class="analysis-meta">${textForLang("noAnalysis", analysisLang)}</div>`;
       const selected = [...analysis.positives, analysis.negative].filter(Boolean);
       const recommendedPositives = analysis.recommended.positives.slice(0, 4).map(row => `${row.sign}${row.label}`).join(" / ");
       const recommendedNegatives = analysis.recommended.safeNegatives.slice(0, 3).map(row => `${row.sign}${row.label}`).join(" / ");
       return `
         <div class="analysis-head">
-          <strong>${escapeHtml(t("analysis"))}</strong>
+          <strong>${escapeHtml(textForLang("analysis", analysisLang))}</strong>
           <span class="grade-pill grade-${analysis.grade.toLowerCase()}">${escapeHtml(analysis.grade)}</span>
         </div>
-        <div class="analysis-meta">${escapeHtml(displayWeaponName(analysis.weapon))} · ${escapeHtml(t("disposition"))} ${escapeHtml(dispositionText(analysis.disposition))}</div>
+        <div class="analysis-meta">${escapeHtml(displayWeaponNameForLang(analysis.weapon, analysisLang))} · ${escapeHtml(textForLang("disposition", analysisLang))} ${escapeHtml(dispositionText(analysis.disposition))}</div>
         ${selected.length ? `<div class="analysis-chips">${selected.map(renderAnalysisChip).join("")}</div>` : ""}
-        <div class="analysis-reco">${escapeHtml(t("statPriority"))}: ${escapeHtml(recommendedPositives || "-")}</div>
-        <div class="analysis-reco">${escapeHtml(t("safeNegative"))}: ${escapeHtml(recommendedNegatives || "-")}</div>
+        <div class="analysis-reco">${escapeHtml(textForLang("statPriority", analysisLang))}: ${escapeHtml(recommendedPositives || "-")}</div>
+        <div class="analysis-reco">${escapeHtml(textForLang("safeNegative", analysisLang))}: ${escapeHtml(recommendedNegatives || "-")}</div>
       `;
     }
 
@@ -1966,7 +2229,9 @@
         document.querySelector("#modalPositive3")?.value
       ];
       const negative = document.querySelector("#modalNegative")?.value || "";
-      node.innerHTML = renderAnalysisBlock(target ? analysisForTarget(target, positives, negative) : null);
+      const analysisLang = lang === "zh" ? "zh" : "en";
+      node.dataset.analysisLanguage = analysisLang;
+      node.innerHTML = renderAnalysisBlock(target ? analysisForTarget(target, positives, negative, analysisLang) : null, analysisLang);
     }
 
     function escapeHtml(value) {
@@ -2039,7 +2304,17 @@
 
     function persistNotificationState() {
       notificationState = pruneNotificationState(notificationState);
-      writeJsonStorage(notificationStorageKey, notificationState);
+      if (notificationState.events.length || notificationState.seenHitKeys.length || notificationState.dismissedHitKeys?.length || notificationState.dismissedEventIds?.length || notificationState.dismissedMessageKeys?.length || notificationState.rateLimitKey || notificationState.matchSignature) {
+        writeJsonStorage(notificationStorageKey, notificationState);
+      } else {
+        removeStorageItem(notificationStorageKey);
+      }
+    }
+
+    function resetNotificationsForRivenChange() {
+      notificationState = resetNotificationMatchState(notificationState);
+      persistNotificationState();
+      renderNotificationUI();
     }
 
     function browserNoticeSupported() {
@@ -2050,6 +2325,7 @@
       if (!browserNoticeSupported()) return t("browserNoticesUnsupported");
       if (Notification.permission === "denied") return t("browserNoticesBlocked");
       if (browserNotificationsEnabled && Notification.permission === "granted") return t("browserNoticesOn");
+      if (browserNotificationsEnabled && Notification.permission === "default") return t("browserNoticesPending");
       return t("enableBrowserNotices");
     }
 
@@ -2143,16 +2419,31 @@
     }
 
     function addNotificationEvents(events) {
-      if (!events.length) {
+      const existingIds = new Set(notificationState.events.map(event => event.id));
+      const dismissedIds = new Set(notificationState.dismissedEventIds || []);
+      const dismissedHitKeys = new Set(notificationState.dismissedHitKeys || []);
+      const dismissedMessageKeys = new Set(notificationState.dismissedMessageKeys || []);
+      const uniqueEvents = events.filter(event => event?.id
+        && !existingIds.has(event.id)
+        && !dismissedIds.has(event.id)
+        && !dismissedMessageKeys.has(notificationMessageKey(event))
+        && (!event.hitKey || !dismissedHitKeys.has(event.hitKey)));
+      if (!uniqueEvents.length) {
         persistNotificationState();
         renderNotificationUI();
         return;
       }
-      notificationState.events = [...notificationState.events, ...events];
+      const singleTypes = new Set(uniqueEvents
+        .filter(event => event.type === "rate_limited" || event.type === "browser_notice_enabled")
+        .map(event => event.type));
+      notificationState.events = [
+        ...notificationState.events.filter(event => !singleTypes.has(event.type)),
+        ...uniqueEvents
+      ];
       persistNotificationState();
-      showToastEvents(events);
-      events.forEach(sendBrowserNotice);
-      playNoticeSound(primarySoundEvent(events)).catch(() => {});
+      showToastEvents(uniqueEvents);
+      uniqueEvents.forEach(sendBrowserNotice);
+      playNoticeSound(primarySoundEvent(uniqueEvents)).catch(() => {});
       renderNotificationUI();
     }
 
@@ -2173,6 +2464,9 @@
         hits: listings,
         rivens,
         seenHitKeys: notificationState.seenHitKeys,
+        dismissedHitKeys: notificationState.dismissedHitKeys,
+        dismissedEventIds: notificationState.dismissedEventIds,
+        dismissedMessageKeys: notificationState.dismissedMessageKeys,
         initialized: notificationState.initialized,
         lang
       });
@@ -2220,14 +2514,18 @@
       document.querySelector("#noticeModalCount").textContent = `${rows.length} ${t("noticeCount")}`;
       document.querySelector("#noticeList").innerHTML = rows.length ? rows.map(event => {
         const notice = localizedNotice(event);
+        const canLocate = Boolean(event.rivenId);
         return `
-        <div class="notice-item ${escapeHtml(noticeSeverityClass(event))}">
+        <div class="notice-item ${escapeHtml(noticeSeverityClass(event))}" data-notice-id="${escapeHtml(event.id || "")}" data-can-locate="${canLocate ? "true" : "false"}">
           <span class="notice-dot" aria-hidden="true"></span>
-          <span>
+          <span class="notice-item-main">
             <strong>${escapeHtml(notice.title)}</strong>
             <span>${escapeHtml(notice.body)}</span>
           </span>
-          <small>${escapeHtml(formatTime(event.createdAt))}</small>
+          <span class="notice-item-actions">
+            <small>${escapeHtml(formatTime(event.createdAt))}</small>
+            <button class="ghost notice-delete" type="button" data-notice-action="delete" data-notice-id="${escapeHtml(event.id || "")}" aria-label="${escapeHtml(t("noticeDismiss"))}">×</button>
+          </span>
         </div>
       `;
       }).join("") : `<div class="empty">${t("noticeEmpty")}</div>`;
@@ -2243,10 +2541,47 @@
     }
 
     function clearNotices() {
-      notificationState.events = [];
+      notificationState = clearNotificationEvents(notificationState);
       persistNotificationState();
       renderNotificationUI();
       renderNoticeModal();
+    }
+
+    function deleteNotice(id) {
+      notificationState = dismissNotificationEvent(notificationState, id);
+      persistNotificationState();
+      renderNotificationUI();
+      renderNoticeModal();
+    }
+
+    function scrollWindowToElement(node, offset = 150) {
+      if (!node) return;
+      const top = node.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }
+
+    function locateNotice(id) {
+      const event = notificationState.events.find(item => item.id === id);
+      if (!event?.rivenId) return;
+      const riven = rivens.find(item => item.id === event.rivenId);
+      if (!riven) {
+        alert(t("noticeGone"));
+        return;
+      }
+      selectedId = riven.id;
+      document.querySelector("#search").value = "";
+      closeNoticeModal();
+      closeHitsModal();
+      render();
+      const rows = [...document.querySelectorAll("[data-hit-key]")];
+      const row = rows.find(node => node.dataset.hitKey === event.hitKey);
+      const rivenButton = [...document.querySelectorAll(".riven-item")].find(node => node.dataset.id === event.rivenId);
+      const target = row || rivenButton || document.querySelector("#hits");
+      scrollWindowToElement(target);
+      if (row) {
+        row.classList.add("hit-focus");
+        setTimeout(() => row.classList.remove("hit-focus"), 1800);
+      }
     }
 
     async function requestBrowserNotices() {
@@ -2272,6 +2607,18 @@
       writeBooleanStorage(soundNotificationStorageKey, notificationSoundEnabled);
       if (notificationSoundEnabled) playNoticeSound({ severity: "success" }).catch(() => {});
       renderNotificationUI();
+    }
+
+    function requestBrowserNoticesOnFirstGesture() {
+      if (!browserNotificationsEnabled || !browserNoticeSupported() || Notification.permission !== "default") return;
+      let requested = false;
+      const requestOnce = () => {
+        if (requested || !browserNotificationsEnabled || Notification.permission !== "default") return;
+        requested = true;
+        requestBrowserNotices().catch(() => renderNotificationUI());
+      };
+      window.addEventListener("pointerdown", requestOnce, { once: true, capture: true });
+      window.addEventListener("keydown", requestOnce, { once: true, capture: true });
     }
 
     function renderStatChips(hit) {
@@ -2369,7 +2716,7 @@
 
     function renderHitRow(hit, riven, rowClass = "row") {
       return `
-        <div class="${rowClass}">
+        <div class="${rowClass}" data-hit-key="${escapeHtml(hitNotificationKey(hit))}">
           <div class="cell">
             <div class="listing-title">
               <strong title="${escapeHtml(hit.title || hit.rivenName || "")}">${escapeHtml(displayHitTitle(hit))}</strong>
@@ -2445,8 +2792,7 @@
     }
 
     function displayWeaponName(family) {
-      const clean = rivenWeaponFamily(family);
-      return lang === "zh" && weaponMeta[clean]?.zh ? weaponMeta[clean].zh : clean;
+      return displayWeaponNameForLang(family, lang);
     }
 
     function hasLocalizedWeaponName(family) {
@@ -2550,10 +2896,18 @@
     }
 
     let modalWeaponFamily = "";
+    let editingRivenId = null;
 
     function currentModalWeaponFamily() {
       const typed = document.querySelector("#modalTarget")?.value.trim() || "";
       return modalWeaponFamily || validRivenWeaponFamily(typed, "");
+    }
+
+    function applyModalModeLabels() {
+      const editing = Boolean(editingRivenId);
+      document.querySelector("#modalTitle").textContent = editing ? t("editRiven") : t("createRiven");
+      document.querySelector("#modalHint").textContent = editing ? t("editHint") : t("createHint");
+      document.querySelector("#createModal").textContent = editing ? t("saveChanges") : t("create");
     }
 
     function statOptionsForWeapon(family, select) {
@@ -2657,8 +3011,11 @@
       document.querySelectorAll("[data-i18n]").forEach(node => {
         node.textContent = t(node.dataset.i18n);
       });
+      applyModalModeLabels();
       if (!document.querySelector("#addModal").hidden) {
-        document.querySelector("#modalTarget").value = displayWeaponName(modalWeaponFamily);
+        const modalFamily = currentModalWeaponFamily();
+        modalWeaponFamily = modalFamily;
+        document.querySelector("#modalTarget").value = modalFamily ? displayWeaponNameForLang(modalFamily, lang) : "";
         fillAllStatSelects();
         renderWeaponMenu(modalWeaponFamily, !document.querySelector("#weaponMenu").hidden);
         updateStatScopeLabels();
@@ -2668,6 +3025,7 @@
       if (!document.querySelector("#weaponsModal").hidden) renderWeaponsModal();
       if (!document.querySelector("#noticeModal").hidden) renderNoticeModal();
       if (!document.querySelector("#deleteConfirmModal").hidden) renderDeleteConfirmTarget();
+      updateRefreshControl();
       renderNotificationUI();
     }
 
@@ -2718,9 +3076,13 @@
         rivens = rivenBody.data || [];
         rivens.forEach(applyRivenWeaponMeta);
         try {
-          const hitBody = await apiJson(`/api/hits?scope=${onlineOnly ? "online" : "all"}${force ? "&force=true" : ""}`);
+          const hitBody = await apiJson(`/api/hits?scope=${onlineOnly ? "online" : "all"}${force ? "&force=true" : ""}&refreshMs=${refreshIntervalMs()}`);
           listings = hitBody.data || [];
-          marketMeta = hitBody.meta || marketMeta;
+          marketMeta = {
+            ...marketMeta,
+            ...(hitBody.meta || {}),
+            refreshIntervalMs: Number(hitBody.meta?.refreshIntervalMs || refreshIntervalMs())
+          };
         } catch (error) {
           marketMeta = {
             ...marketMeta,
@@ -2794,15 +3156,24 @@
     function updateModalGeneratedName() {
       const typedTarget = document.querySelector("#modalTarget").value.trim();
       const target = typedTarget ? validRivenWeaponFamily(typedTarget, modalWeaponFamily) : modalWeaponFamily;
+      const nameNode = document.querySelector("#modalName");
       if (!target) {
-        document.querySelector("#modalName").textContent = "";
+        nameNode.textContent = "";
+        nameNode.removeAttribute("title");
         return;
       }
       const preview = {
         target,
         positives: [document.querySelector("#modalPositive1").value, document.querySelector("#modalPositive2").value, document.querySelector("#modalPositive3").value]
       };
-      document.querySelector("#modalName").textContent = displayGeneratedRivenName(preview);
+      const weaponName = displayWeaponName(target);
+      const nameCore = generatedNameCore(preview.positives);
+      const fullName = `${weaponName} ${nameCore}`;
+      nameNode.title = fullName;
+      nameNode.innerHTML = `
+        <span class="generated-weapon">${escapeHtml(weaponName)}</span>
+        <span class="generated-core">${escapeHtml(nameCore)}</span>
+      `;
       renderModalAnalysis();
     }
 
@@ -2812,6 +3183,7 @@
       document.querySelector("#activeMetric").textContent = rivens.length;
       document.querySelector("#hitMetric").textContent = onlineOnly ? onlineHits : listings.length;
       document.querySelector("#weaponMetric").textContent = weapons;
+      document.querySelector("#editSide").disabled = !activeRiven();
     }
 
     function syncSortControls() {
@@ -2873,7 +3245,7 @@
 
     function scheduleMarketRefresh(delayMs) {
       if (refreshTimer) clearTimeout(refreshTimer);
-      const fallback = Number(marketMeta.refreshIntervalMs || 120000);
+      const fallback = Number(marketMeta.refreshIntervalMs || refreshIntervalMs());
       const delay = Math.max(1000, Number(delayMs ?? marketMeta.nextRefreshInMs ?? fallback));
       refreshTimer = setTimeout(() => {
         refreshData().catch(() => {
@@ -2894,7 +3266,7 @@
       if (!node) return;
       node.classList.remove("market-waiting", "market-error");
       if (!activeRiven()) {
-        node.textContent = `0 ${t("listingCount")} • warframe.market • ${t("refreshEvery")}`;
+        node.textContent = `0 ${t("listingCount")} • warframe.market • ${refreshEveryText()}`;
         return;
       }
       const remaining = refreshSecondsRemaining();
@@ -3046,28 +3418,55 @@
     }
 
     function openModal() {
+      editingRivenId = null;
       modalWeaponFamily = "";
-      fillAllStatSelects();
       document.querySelector("#modalTarget").value = "";
       document.querySelector("#modalMinPrice").value = "";
       document.querySelector("#modalPrice").value = "";
-      document.querySelector("#modalPositive1").value = "critical_chance";
-      document.querySelector("#modalPositive2").value = "critical_damage";
-      document.querySelector("#modalPositive3").value = "multishot";
+      fillStatSelect(document.querySelector("#modalPositive1"), "critical_chance");
+      fillStatSelect(document.querySelector("#modalPositive2"), "critical_damage");
+      fillStatSelect(document.querySelector("#modalPositive3"), "multishot");
+      fillStatSelect(document.querySelector("#modalNegative"), "");
       updateModalGeneratedName();
-      document.querySelector("#modalNegative").value = "";
       updateStatScopeLabels();
       setPolarityOptions(document.querySelector("#modalPolarity"), "Any");
       document.querySelector("#modalMastery").value = "";
       document.querySelector("#modalRank").value = "Rank 8";
       document.querySelector("#modalRerolls").value = "";
+      applyModalModeLabels();
       document.querySelector("#addModal").hidden = false;
       renderWeaponMenu("", true);
       document.querySelector("#modalTarget").focus();
     }
 
+    function openEditModal() {
+      const riven = activeRiven();
+      if (!riven) return;
+      editingRivenId = riven.id;
+      modalWeaponFamily = validRivenWeaponFamily(riven.target);
+      document.querySelector("#modalTarget").value = displayWeaponName(modalWeaponFamily);
+      document.querySelector("#modalMinPrice").value = String(riven.minPrice || "").replace(/[^\d]/g, "");
+      document.querySelector("#modalPrice").value = String(riven.price || "").replace(/[^\d]/g, "");
+      fillStatSelect(document.querySelector("#modalPositive1"), riven.positives?.[0] || "");
+      fillStatSelect(document.querySelector("#modalPositive2"), riven.positives?.[1] || "");
+      fillStatSelect(document.querySelector("#modalPositive3"), riven.positives?.[2] || "");
+      fillStatSelect(document.querySelector("#modalNegative"), riven.negative || "");
+      updateModalGeneratedName();
+      updateStatScopeLabels();
+      setPolarityOptions(document.querySelector("#modalPolarity"), riven.polarity || "Any");
+      document.querySelector("#modalMastery").value = riven.mastery || "";
+      document.querySelector("#modalRank").value = riven.rank || "Rank 8";
+      document.querySelector("#modalRerolls").value = riven.rerolls || "";
+      applyModalModeLabels();
+      document.querySelector("#addModal").hidden = false;
+      renderWeaponMenu(modalWeaponFamily, false);
+      document.querySelector("#modalTarget").focus();
+    }
+
     function closeModal() {
       document.querySelector("#addModal").hidden = true;
+      editingRivenId = null;
+      applyModalModeLabels();
     }
 
     let pendingDeleteId = null;
@@ -3122,10 +3521,10 @@
       input.value = input.value.replace(/[^\d]/g, "");
     }
 
-    async function createRiven() {
+    function modalRivenPayload() {
       const typedTarget = document.querySelector("#modalTarget").value.trim();
       const target = typedTarget ? validRivenWeaponFamily(typedTarget, modalWeaponFamily) : "";
-      const body = {
+      return {
         target,
         minPrice: normalizePlatPrice(document.querySelector("#modalMinPrice").value),
         price: normalizePlatPrice(document.querySelector("#modalPrice").value),
@@ -3136,18 +3535,69 @@
         rank: document.querySelector("#modalRank").value,
         rerolls: document.querySelector("#modalRerolls").value.trim()
       };
-      const result = await apiJson("/api/rivens", { method: "POST", body: JSON.stringify(body) });
-      selectedId = result.data.id;
+    }
+
+    function normalizeLocalRiven(riven = {}) {
+      return {
+        ...riven,
+        positives: Array.isArray(riven.positives) ? [...riven.positives] : []
+      };
+    }
+
+    function upsertLocalRiven(riven) {
+      const next = normalizeLocalRiven(riven);
+      const index = rivens.findIndex(item => item.id === next.id);
+      rivens = index === -1
+        ? [next, ...rivens]
+        : rivens.map(item => item.id === next.id ? next : item);
+      listings = listings.filter(hit => hit.rivenId !== next.id);
+      selectedId = next.id;
+    }
+
+    function refreshMarketInBackground({ force = true } = {}) {
+      refreshData({ force }).catch(() => {
+        marketMeta = { ...marketMeta, status: "unavailable", nextRefreshInMs: 30000 };
+        marketMetaReceivedAt = Date.now();
+        render();
+        scheduleMarketRefresh(30000);
+      });
+    }
+
+    async function saveModalRiven() {
+      const body = modalRivenPayload();
+      const result = editingRivenId
+        ? await apiJson(`/api/rivens/${encodeURIComponent(editingRivenId)}`, { method: "PUT", body: JSON.stringify(body) })
+        : await apiJson("/api/rivens", { method: "POST", body: JSON.stringify(body) });
+      upsertLocalRiven(result.data);
+      resetNotificationsForRivenChange();
       closeModal();
-      await refreshData({ force: true });
+      render();
+      refreshMarketInBackground({ force: true });
     }
 
     async function deleteRiven(id = selectedId) {
       if (!id) return;
       const index = rivens.findIndex(riven => riven.id === id);
       await apiJson(`/api/rivens/${encodeURIComponent(id)}`, { method: "DELETE" });
-      selectedId = rivens[Math.max(0, index - 1)]?.id || null;
-      await refreshData({ force: true });
+      const nextRivens = rivens.filter(riven => riven.id !== id);
+      rivens = nextRivens;
+      listings = listings.filter(hit => hit.rivenId !== id);
+      selectedId = nextRivens[Math.min(Math.max(index, 0), nextRivens.length - 1)]?.id || null;
+      resetNotificationsForRivenChange();
+      render();
+      refreshMarketInBackground({ force: true });
+    }
+
+    function previewRefreshRisk(value) {
+      const risk = document.querySelector("#refreshRisk");
+      if (risk) risk.hidden = normalizeRefreshSeconds(value) >= defaultRefreshSeconds;
+    }
+
+    function commitRefreshInterval(event) {
+      const input = event?.target || document.querySelector("#refreshSeconds");
+      const next = normalizeRefreshSeconds(input?.value || refreshIntervalSeconds);
+      if (input) input.value = String(next);
+      setRefreshIntervalSeconds(next);
     }
 
     function render() {
@@ -3159,11 +3609,17 @@
     }
 
     document.querySelectorAll("[data-lang]").forEach(button => {
-      button.addEventListener("click", async () => {
-        lang = button.dataset.lang;
+      button.addEventListener("click", () => {
+        const nextLang = button.dataset.lang;
+        if (nextLang === lang) return;
+        lang = nextLang;
         storeLanguage(lang);
-        await fetchBackendWeaponCatalog().catch(() => {});
         render();
+        fetchBackendWeaponCatalog()
+          .then(() => {
+            if (lang === nextLang) render();
+          })
+          .catch(() => {});
       });
     });
 
@@ -3190,12 +3646,16 @@
     document.querySelector("#noticeCenterButton").addEventListener("click", openNoticeModal);
     document.querySelector("#requestBrowserNotices").addEventListener("click", () => requestBrowserNotices().catch(() => renderNotificationUI()));
     document.querySelector("#toggleNoticeSound").addEventListener("click", toggleNoticeSound);
+    document.querySelector("#refreshSeconds").addEventListener("input", event => previewRefreshRisk(event.target.value));
+    document.querySelector("#refreshSeconds").addEventListener("change", commitRefreshInterval);
+    document.querySelector("#refreshSeconds").addEventListener("blur", commitRefreshInterval);
     document.querySelector("#deleteSide").addEventListener("click", openDeleteConfirm);
     document.querySelector("#addTop").addEventListener("click", openModal);
     document.querySelector("#addSide").addEventListener("click", openModal);
+    document.querySelector("#editSide").addEventListener("click", openEditModal);
     document.querySelector("#closeModal").addEventListener("click", closeModal);
     document.querySelector("#cancelModal").addEventListener("click", closeModal);
-    document.querySelector("#createModal").addEventListener("click", () => createRiven().catch(error => alert(error.message)));
+    document.querySelector("#createModal").addEventListener("click", () => saveModalRiven().catch(error => alert(error.message)));
     document.querySelector("#addModal").addEventListener("click", event => {
       if (event.target.id === "addModal") closeModal();
     });
@@ -3222,6 +3682,16 @@
       if (event.target.id === "weaponsModal") closeWeaponsModal();
     });
     document.querySelector("#noticeModal").addEventListener("click", event => {
+      const actionButton = event.target.closest("[data-notice-action]");
+      if (actionButton) {
+        if (actionButton.dataset.noticeAction === "delete") deleteNotice(actionButton.dataset.noticeId);
+        return;
+      }
+      const noticeItem = event.target.closest(".notice-item[data-can-locate='true']");
+      if (noticeItem) {
+        locateNotice(noticeItem.dataset.noticeId);
+        return;
+      }
       if (event.target.id === "noticeModal") closeNoticeModal();
     });
     ["modalTarget", "modalPositive1", "modalPositive2", "modalPositive3", "modalNegative"].forEach(id => {
@@ -3278,6 +3748,7 @@
     });
 
     populateTargets();
+    requestBrowserNoticesOnFirstGesture();
     fetchBackendWeaponCatalog().catch(() => populateTargets()).then(() => refreshData().catch(() => {
       marketMeta = { ...marketMeta, status: "unavailable", nextRefreshInMs: 30000 };
       marketMetaReceivedAt = Date.now();

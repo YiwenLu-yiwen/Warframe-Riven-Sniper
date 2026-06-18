@@ -50,7 +50,6 @@ Open `http://localhost:4173`.
 | Command | Description |
 | --- | --- |
 | `npm start` | Start the local web server |
-| `npm test` | Run the Node test suite |
 | `node scripts/build-riven-weapon-catalog.mjs` | Rebuild the generated Riven weapon catalog |
 
 ### Architecture
@@ -62,7 +61,6 @@ Open `http://localhost:4173`.
 | `server/market.js` | Warframe.Market auction normalization, caching, grouping, and rate-limit behavior |
 | `server/riven-weapons.generated.js` | Generated weapon catalog from Warframe Wiki disposition data plus localized Warframe Status item data |
 | `server/store.js` | Local Riven watch persistence in `data/rivens.json` |
-| `test/server.test.js` | Catalog, API, market, refresh, and persistence tests |
 
 ### Refresh Behavior
 

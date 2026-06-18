@@ -101,6 +101,27 @@ export function createRiven(input) {
   return { ...riven, positives: [...riven.positives] };
 }
 
+export function updateRiven(id, input) {
+  loadRivens();
+  const index = rivens.findIndex(riven => riven.id === id);
+  if (index === -1) return null;
+
+  const validation = validateRivenInput(input);
+  if (!validation.ok) {
+    const error = new Error(validation.message);
+    error.code = "VALIDATION_ERROR";
+    throw error;
+  }
+
+  const riven = {
+    id,
+    ...validation.value
+  };
+  rivens[index] = riven;
+  saveRivens();
+  return { ...riven, positives: [...riven.positives] };
+}
+
 export function deleteRiven(id) {
   loadRivens();
   const before = rivens.length;

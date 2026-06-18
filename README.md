@@ -50,7 +50,6 @@ npm start
 | 命令 | 说明 |
 | --- | --- |
 | `npm start` | 启动本地网页服务器 |
-| `npm test` | 运行 Node 测试套件 |
 | `node scripts/build-riven-weapon-catalog.mjs` | 重新生成裂罅武器目录 |
 
 ### 架构
@@ -62,7 +61,6 @@ npm start
 | `server/market.js` | Warframe.Market 拍卖订单标准化、缓存、分组和限流处理 |
 | `server/riven-weapons.generated.js` | 根据 Warframe Wiki 裂罅倾向表和 Warframe Status 本地化物品数据生成的武器目录 |
 | `server/store.js` | 将本地裂罅监控项持久化到 `data/rivens.json` |
-| `test/server.test.js` | 目录、API、市场数据、刷新逻辑和持久化测试 |
 
 ### 刷新逻辑
 

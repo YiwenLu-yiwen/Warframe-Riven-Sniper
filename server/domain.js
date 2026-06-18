@@ -86,9 +86,9 @@ export async function listLiveWeapons({ lang = "en", query = "" } = {}) {
   return listWeapons({ lang, query });
 }
 
-export async function listHits({ scope = "online", rivenId, force = false } = {}) {
+export async function listHits({ scope = "online", rivenId, force = false, refreshMs } = {}) {
   const rivens = listRivens().filter(riven => !rivenId || riven.id === rivenId);
-  return fetchLiveHitsForRivens(rivens, { scope, force });
+  return fetchLiveHitsForRivens(rivens, { scope, force, refreshIntervalMs: refreshMs });
 }
 
 export async function health() {

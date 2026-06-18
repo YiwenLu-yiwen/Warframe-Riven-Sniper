@@ -3,6 +3,7 @@ import { findWeaponCatalogEntry, weaponCatalog } from "./catalog.js";
 const MARKET_BASE_URL = "https://api.warframe.market/v1";
 const VARIANT_WORDS = new Set(["prime", "vandal", "wraith"]);
 export const MARKET_REFRESH_INTERVAL_MS = 120000;
+export const MARKET_MIN_REFRESH_INTERVAL_MS = 10000;
 export const MARKET_MIN_REQUEST_INTERVAL_MS = 1000;
 export const MARKET_RATE_LIMIT_BACKOFF_MS = 10000;
 export const MARKET_FORCE_REFRESH_WEAPON_LIMIT = 3;
@@ -61,6 +62,12 @@ const weaponCache = new Map();
 const marketUrlToFamily = new Map(weaponCatalog.map(weapon => [weapon.marketUrlName, weapon.family]));
 let marketRequestChain = Promise.resolve();
 let lastMarketRequestAt = 0;
+
+export function normalizeMarketRefreshIntervalMs(value = MARKET_REFRESH_INTERVAL_MS) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return MARKET_REFRESH_INTERVAL_MS;
+  return Math.max(MARKET_MIN_REFRESH_INTERVAL_MS, Math.floor(numeric));
+}
 
 class MarketRateLimitError extends Error {
   constructor(message, { retryAfterMs }) {
@@ -392,12 +399,13 @@ async function fetchCachedMarketHitsForWeapon(group, {
   minRequestIntervalMs,
   rateLimitBackoffMs,
   maxRateLimitRetries,
-  cacheNamespace
+  cacheNamespace,
+  refreshIntervalMs
 }) {
   const key = weaponCacheKey({ weaponUrlName: group.weaponUrlName, scope, namespace: cacheNamespace });
   const cached = weaponCache.get(key);
   const now = Date.now();
-  if (!force && cached && now - cached.refreshedAt < MARKET_REFRESH_INTERVAL_MS) {
+  if (!force && cached && now - cached.refreshedAt < refreshIntervalMs) {
     return { hits: cached.data.map(cloneHit), searched: false, cached: true };
   }
 
@@ -422,16 +430,18 @@ export async function fetchLiveHitsForRivens(rivens, {
   minRequestIntervalMs = MARKET_MIN_REQUEST_INTERVAL_MS,
   rateLimitBackoffMs = MARKET_RATE_LIMIT_BACKOFF_MS,
   maxRateLimitRetries = 3,
-  cacheNamespace = "default"
+  cacheNamespace = "default",
+  refreshIntervalMs = MARKET_REFRESH_INTERVAL_MS
 } = {}) {
+  const resolvedRefreshIntervalMs = normalizeMarketRefreshIntervalMs(refreshIntervalMs);
   if (!rivens.length) {
     return {
       data: [],
       meta: {
         source: "warframe.market",
-        refreshIntervalMs: MARKET_REFRESH_INTERVAL_MS,
+        refreshIntervalMs: resolvedRefreshIntervalMs,
         cacheAgeMs: 0,
-        nextRefreshInMs: MARKET_REFRESH_INTERVAL_MS,
+        nextRefreshInMs: resolvedRefreshIntervalMs,
         refreshedAt: null
       }
     };
@@ -442,7 +452,7 @@ export async function fetchLiveHitsForRivens(rivens, {
   const cached = cache.get(key);
   const groups = groupRivensByWeapon(rivens);
   const forceLimited = force && groups.length > MARKET_FORCE_REFRESH_WEAPON_LIMIT;
-  if (!force && cached && now - cached.refreshedAt < MARKET_REFRESH_INTERVAL_MS) {
+  if (!force && cached && now - cached.refreshedAt < resolvedRefreshIntervalMs) {
     const cacheAgeMs = now - cached.refreshedAt;
     return {
       data: cached.data.map(cloneHit),
@@ -450,7 +460,8 @@ export async function fetchLiveHitsForRivens(rivens, {
         ...cacheMeta({
           status: "cached",
           cached,
-          nextRefreshInMs: Math.max(0, MARKET_REFRESH_INTERVAL_MS - cacheAgeMs),
+          refreshIntervalMs: resolvedRefreshIntervalMs,
+          nextRefreshInMs: Math.max(0, resolvedRefreshIntervalMs - cacheAgeMs),
           weaponsSearched: cached.weaponsSearched || 0,
           rivensSearched: rivens.length,
           groups,
@@ -473,7 +484,8 @@ export async function fetchLiveHitsForRivens(rivens, {
         minRequestIntervalMs,
         rateLimitBackoffMs,
         maxRateLimitRetries,
-        cacheNamespace
+        cacheNamespace,
+        refreshIntervalMs: resolvedRefreshIntervalMs
       });
       if (weaponResult.searched) weaponsSearched += 1;
       for (const riven of group.rivens) {
@@ -491,6 +503,7 @@ export async function fetchLiveHitsForRivens(rivens, {
         meta: cacheMeta({
           status: "rate_limited",
           cached,
+          refreshIntervalMs: resolvedRefreshIntervalMs,
           nextRefreshInMs: retryAfterMs,
           retryAfterMs,
           weaponsSearched,
@@ -510,7 +523,8 @@ export async function fetchLiveHitsForRivens(rivens, {
     meta: cacheMeta({
       status: weaponsSearched ? "fresh" : "cached",
       cached: { refreshedAt: now },
-      nextRefreshInMs: MARKET_REFRESH_INTERVAL_MS,
+      refreshIntervalMs: resolvedRefreshIntervalMs,
+      nextRefreshInMs: resolvedRefreshIntervalMs,
       weaponsSearched,
       rivensSearched: rivens.length,
       groups,
