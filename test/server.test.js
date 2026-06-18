@@ -56,6 +56,54 @@ describe("Frontend preferences", () => {
     assert.doesNotMatch(html, /class="mini-grade/);
     assert.match(html, /id="modalAnalysis"/);
   });
+
+  it("renders a bounded Web notification center with optional browser notices", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /from "\/shared\/notifications\.js"/);
+    assert.match(html, /notificationStorageKey = "warframe-riven-sniper-notifications"/);
+    assert.match(html, /browserNotificationStorageKey = "warframe-riven-sniper-browser-notifications"/);
+    assert.match(html, /id="noticeBar"/);
+    assert.match(html, /id="noticeModal"/);
+    assert.match(html, /id="requestBrowserNotices"/);
+    assert.match(html, /collectHitNotifications/);
+    assert.match(html, /createRateLimitNotification/);
+    assert.match(html, /new Notification/);
+  });
+
+  it("adds a confirmation notice after browser notices are enabled", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /browserNoticeEnabledEvent\(\)/);
+    assert.match(html, /browserNoticeEnabledTitle/);
+    assert.match(html, /browserNoticeEnabledBody/);
+    assert.match(html, /addNotificationEvents\(\[browserNoticeEnabledEvent\(\)\]\)/);
+  });
+
+  it("uses a lightweight synthesized sound effect for enabled browser notices", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /soundNotificationStorageKey = "warframe-riven-sniper-notification-sound"/);
+    assert.match(html, /id="toggleNoticeSound"/);
+    assert.match(html, /function playNoticeSound\(event\)/);
+    assert.match(html, /function soundPatternForEvent\(event\)/);
+    assert.match(html, /AudioContext|webkitAudioContext/);
+    assert.match(html, /playNoticeSound\(primarySoundEvent\(events\)\)/);
+    assert.doesNotMatch(html, /new Audio\(/);
+  });
+
+  it("requires an explicit yes/no confirmation before deleting a Riven", () => {
+    const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+    assert.match(html, /id="deleteConfirmModal"/);
+    assert.match(html, /id="cancelDeleteConfirm"/);
+    assert.match(html, /id="confirmDeleteRiven"/);
+    assert.match(html, /function openDeleteConfirm\(\)/);
+    assert.match(html, /function closeDeleteConfirm\(\)/);
+    assert.match(html, /function confirmDeleteRiven\(\)/);
+    assert.match(html, /#deleteSide"\)\.addEventListener\("click", openDeleteConfirm\)/);
+    assert.doesNotMatch(html, /#deleteSide"\)\.addEventListener\("click", \(\) => deleteRiven/);
+  });
 });
 
 describe("Riven weapon catalog", () => {

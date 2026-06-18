@@ -71,7 +71,7 @@
     .app {
       min-height: 100vh;
       display: grid;
-      grid-template-rows: auto auto 1fr;
+      grid-template-rows: auto auto auto 1fr;
     }
 
     .topbar {
@@ -250,6 +250,88 @@
       background: #17140f;
     }
 
+    .notice-bar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #14110d;
+    }
+
+    .notice-summary {
+      min-width: 0;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #0e0c09;
+      color: inherit;
+      padding: 8px 11px;
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+    }
+
+    .notice-summary:hover {
+      border-color: var(--accent);
+    }
+
+    .notice-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--faint);
+    }
+
+    .notice-summary.has-success .notice-dot { background: var(--green); }
+    .notice-summary.has-price .notice-dot { background: var(--accent); }
+    .notice-summary.has-wait .notice-dot { background: var(--blue); }
+
+    .notice-copy {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .notice-copy strong,
+    .notice-copy span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .notice-copy strong {
+      font-size: 13px;
+    }
+
+    .notice-copy span,
+    .notice-count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .notice-permission {
+      white-space: nowrap;
+    }
+
+    .notice-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .notice-actions button[aria-pressed="true"] {
+      border-color: rgba(214, 168, 76, .55);
+      color: var(--accent);
+      background: rgba(214, 168, 76, .1);
+    }
+
     .metric {
       border: 1px solid var(--line);
       background: var(--panel);
@@ -287,7 +369,8 @@
 
     .metric-button:focus-visible,
     .copy-button:focus-visible,
-    .weapon-route:focus-visible {
+    .weapon-route:focus-visible,
+    .notice-summary:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
     }
@@ -885,6 +968,10 @@
       width: min(1240px, calc(100vw - 48px));
     }
 
+    .modal-panel.confirm-panel {
+      width: min(460px, calc(100vw - 48px));
+    }
+
     .modal-head {
       display: flex;
       justify-content: space-between;
@@ -919,6 +1006,39 @@
       gap: 12px;
     }
 
+    .confirm-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .confirm-body p {
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 14px;
+    }
+
+    .confirm-target {
+      border: 1px solid rgba(210,107,86,.45);
+      background: rgba(210,107,86,.08);
+      padding: 11px 12px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .confirm-target strong,
+    .confirm-target span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .confirm-target span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
     .modal-grid {
       display: grid;
       grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -936,6 +1056,88 @@
     .hit-stack {
       display: grid;
       gap: 8px;
+    }
+
+    .notice-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .notice-item {
+      border: 1px solid var(--line);
+      background: #15120e;
+      padding: 11px 12px;
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .notice-item .notice-dot {
+      margin-top: 5px;
+    }
+
+    .notice-item.price .notice-dot { background: var(--accent); }
+    .notice-item.success .notice-dot { background: var(--green); }
+    .notice-item.wait .notice-dot { background: var(--blue); }
+
+    .notice-item strong,
+    .notice-item span {
+      min-width: 0;
+    }
+
+    .notice-item small {
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .toast-stack {
+      position: fixed;
+      right: 18px;
+      top: 112px;
+      z-index: 60;
+      width: min(380px, calc(100vw - 36px));
+      display: grid;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast {
+      border: 1px solid var(--line);
+      background: #15120e;
+      box-shadow: 0 18px 50px rgba(0,0,0,.38);
+      padding: 10px 11px;
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .toast.price { border-color: rgba(214,168,76,.55); }
+    .toast.success { border-color: rgba(143,189,105,.45); }
+    .toast.wait { border-color: rgba(120,183,189,.48); }
+
+    .toast .notice-dot {
+      margin-top: 5px;
+    }
+
+    .toast.price .notice-dot { background: var(--accent); }
+    .toast.success .notice-dot { background: var(--green); }
+    .toast.wait .notice-dot { background: var(--blue); }
+
+    .toast strong,
+    .toast span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toast span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
     }
 
     .hit-stack.table-like {
@@ -1021,6 +1223,9 @@
 
       .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
       .metrics-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .notice-bar { grid-template-columns: 1fr; }
+      .notice-actions { justify-content: stretch; }
+      .notice-actions button { flex: 1 1 150px; }
       .span-2, .span-3, .span-4, .span-5, .span-6, .span-12 { grid-column: span 12; }
       .editor, .modal-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); }
       .market-details, .stat-grid { grid-template-columns: 1fr; }
@@ -1071,6 +1276,21 @@
       <button class="metric metric-button" id="weaponsCard" type="button"><span data-i18n="weaponsTracked">武器数</span><strong id="weaponMetric">0</strong></button>
     </section>
 
+    <section class="notice-bar" id="noticeBar" aria-label="系统通知">
+      <button class="notice-summary" id="noticeCenterButton" type="button">
+        <span class="notice-dot" aria-hidden="true"></span>
+        <span class="notice-copy">
+          <strong id="noticeTitle" data-i18n="systemNotices">系统通知</strong>
+          <span id="noticeSummary" data-i18n="noticeIdle">等待新的在线订单、低价命中或限流等待。</span>
+        </span>
+        <span class="notice-count" id="noticeCount">0</span>
+      </button>
+      <div class="notice-actions">
+        <button class="ghost notice-permission" id="requestBrowserNotices" type="button" data-i18n="enableBrowserNotices">启用浏览器通知</button>
+        <button class="ghost notice-permission" id="toggleNoticeSound" type="button" aria-pressed="false" data-i18n="soundOff">提示音关</button>
+      </div>
+    </section>
+
     <div class="layout">
       <aside class="sidebar">
         <div class="section-head">
@@ -1117,6 +1337,8 @@
     </div>
     <footer class="app-footer">Warframe Riven Sniper v1.1 · MIT License · 2026</footer>
   </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 
   <div class="modal" id="addModal" hidden>
     <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -1211,6 +1433,25 @@
     </section>
   </div>
 
+  <div class="modal" id="deleteConfirmModal" hidden>
+    <section class="modal-panel confirm-panel" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="deleteConfirmTitle" data-i18n="deleteConfirmTitle">确认删除裂罅</h2>
+          <p class="sub" data-i18n="deleteConfirmHint">这个操作会从本地监控列表移除。</p>
+        </div>
+      </div>
+      <div class="confirm-body">
+        <p data-i18n="deleteConfirmBody">确定要删除这条裂罅吗？</p>
+        <div class="confirm-target" id="deleteConfirmTarget" aria-live="polite"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="ghost" id="cancelDeleteConfirm" data-i18n="noKeep">否，保留</button>
+        <button class="danger" id="confirmDeleteRiven" data-i18n="yesDelete">是，删除</button>
+      </div>
+    </section>
+  </div>
+
   <div class="modal" id="hitsModal" hidden>
     <section class="modal-panel wide-panel" role="dialog" aria-modal="true" aria-labelledby="hitsModalTitle">
       <div class="modal-head">
@@ -1243,6 +1484,24 @@
     </section>
   </div>
 
+  <div class="modal" id="noticeModal" hidden>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="noticeModalTitle">
+      <div class="modal-head">
+        <div>
+          <h2 id="noticeModalTitle" data-i18n="systemNotices">系统通知</h2>
+          <p class="sub" id="noticeModalCount">0</p>
+        </div>
+        <div class="modal-tools">
+          <button class="ghost" id="clearNotices" data-i18n="clearNotices">清空</button>
+          <button class="ghost" id="closeNoticeModal" data-i18n="close">关闭</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="notice-list" id="noticeList"></div>
+      </div>
+    </section>
+  </div>
+
   <script type="module">
     import {
       displayPriceRange,
@@ -1259,6 +1518,11 @@
       listingAnalysisCacheKey,
       statTierMark
     } from "/shared/riven-analysis.js";
+    import {
+      collectHitNotifications,
+      createRateLimitNotification,
+      pruneNotificationState
+    } from "/shared/notifications.js";
 
     const dictionary = {
       en: {
@@ -1312,11 +1576,31 @@
         rivenUnits: "Rivens",
         createRiven: "Create Riven",
         createHint: "Choose a weapon and stats; the Riven name is generated from positive attributes.",
+        deleteConfirmTitle: "Delete Riven?",
+        deleteConfirmHint: "This removes it from your local watch list.",
+        deleteConfirmBody: "Do you want to delete this Riven watch?",
+        noKeep: "No, keep it",
+        yesDelete: "Yes, delete",
+        noSelection: "No Riven selected.",
         analysis: "Riven Analysis",
         disposition: "Disposition",
         statPriority: "Priority",
         safeNegative: "Safe negative",
         noAnalysis: "Choose a weapon to see stat tiers.",
+        systemNotices: "System Notices",
+        noticeIdle: "Waiting for new online listings, low-price hits, or rate-limit waits.",
+        noticeCount: "notices",
+        noticeEmpty: "No notices yet.",
+        enableBrowserNotices: "Enable browser notices",
+        browserNoticesOn: "Browser notices on",
+        browserNoticesBlocked: "Browser notices blocked",
+        browserNoticesUnsupported: "Browser notices unavailable",
+        browserNoticeEnabledTitle: "Browser notices enabled",
+        browserNoticeEnabledBody: "System popups are ready. New Riven hits can now appear outside the page.",
+        soundOn: "Sound on",
+        soundOff: "Sound off",
+        soundUnsupported: "Sound unavailable",
+        clearNotices: "Clear",
         close: "Close",
         cancel: "Cancel",
         create: "Create"
@@ -1372,11 +1656,31 @@
         rivenUnits: "条裂罅",
         createRiven: "创建裂罅",
         createHint: "选择武器和词条；裂罅名称会根据正面词条自动生成。",
+        deleteConfirmTitle: "确认删除裂罅",
+        deleteConfirmHint: "这个操作会从本地监控列表移除。",
+        deleteConfirmBody: "确定要删除这条裂罅吗？",
+        noKeep: "否，保留",
+        yesDelete: "是，删除",
+        noSelection: "未选择裂罅。",
         analysis: "裂罅分析",
         disposition: "倾向",
         statPriority: "优先",
         safeNegative: "安全负面",
         noAnalysis: "选择武器后显示词条分级。",
+        systemNotices: "系统通知",
+        noticeIdle: "等待新的在线订单、低价命中或限流等待。",
+        noticeCount: "条通知",
+        noticeEmpty: "暂无通知。",
+        enableBrowserNotices: "启用浏览器通知",
+        browserNoticesOn: "浏览器通知已启用",
+        browserNoticesBlocked: "浏览器通知被阻止",
+        browserNoticesUnsupported: "浏览器通知不可用",
+        browserNoticeEnabledTitle: "浏览器通知已启用",
+        browserNoticeEnabledBody: "系统弹窗已准备好。新的裂罅命中可以在网页外提醒。",
+        soundOn: "提示音开",
+        soundOff: "提示音关",
+        soundUnsupported: "提示音不可用",
+        clearNotices: "清空",
         close: "关闭",
         cancel: "取消",
         create: "创建"
@@ -1483,6 +1787,9 @@
     };
 
     const languageStorageKey = "warframe-riven-sniper-language";
+    const notificationStorageKey = "warframe-riven-sniper-notifications";
+    const browserNotificationStorageKey = "warframe-riven-sniper-browser-notifications";
+    const soundNotificationStorageKey = "warframe-riven-sniper-notification-sound";
 
     function storedLanguage() {
       try {
@@ -1501,6 +1808,51 @@
       }
     }
 
+    function readJsonStorage(key, fallback) {
+      try {
+        const raw = window.localStorage?.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function writeJsonStorage(key, value) {
+      try {
+        window.localStorage?.setItem(key, JSON.stringify(value));
+      } catch {
+        // Ignore unavailable storage; notifications still work for the current session.
+      }
+    }
+
+    function readBooleanStorage(key, fallback = false) {
+      try {
+        const value = window.localStorage?.getItem(key);
+        if (value === "true") return true;
+        if (value === "false") return false;
+        return fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function booleanStorageHasValue(key) {
+      try {
+        const value = window.localStorage?.getItem(key);
+        return value === "true" || value === "false";
+      } catch {
+        return false;
+      }
+    }
+
+    function writeBooleanStorage(key, value) {
+      try {
+        window.localStorage?.setItem(key, value ? "true" : "false");
+      } catch {
+        // Ignore unavailable storage; the current session state still works.
+      }
+    }
+
     let lang = storedLanguage();
     let onlineOnly = true;
     let selectedId = null;
@@ -1512,6 +1864,11 @@
     let hitSort = "priceAsc";
     let refreshTimer = null;
     const hitAnalysisCache = new Map();
+    let notificationState = pruneNotificationState(readJsonStorage(notificationStorageKey, {}));
+    let browserNotificationsEnabled = readBooleanStorage(browserNotificationStorageKey, false);
+    let notificationSoundEnabled = readBooleanStorage(soundNotificationStorageKey, browserNotificationsEnabled);
+    let noticeAudioContext = null;
+    let toastTimer = null;
 
     function t(key) {
       return dictionary[lang][key] || key;
@@ -1652,6 +2009,239 @@
       const hours = Math.floor(minutes / 60);
       if (hours < 48) return `${hours}h`;
       return `${Math.floor(hours / 24)}d`;
+    }
+
+    function noticeSeverityClass(event) {
+      if (!event) return "";
+      return event.severity || "success";
+    }
+
+    function persistNotificationState() {
+      notificationState = pruneNotificationState(notificationState);
+      writeJsonStorage(notificationStorageKey, notificationState);
+    }
+
+    function browserNoticeSupported() {
+      return "Notification" in window;
+    }
+
+    function browserNoticePermissionLabel() {
+      if (!browserNoticeSupported()) return t("browserNoticesUnsupported");
+      if (Notification.permission === "denied") return t("browserNoticesBlocked");
+      if (browserNotificationsEnabled && Notification.permission === "granted") return t("browserNoticesOn");
+      return t("enableBrowserNotices");
+    }
+
+    function noticeSoundSupported() {
+      return Boolean(window.AudioContext || window.webkitAudioContext);
+    }
+
+    function noticeSoundLabel() {
+      if (!noticeSoundSupported()) return t("soundUnsupported");
+      return notificationSoundEnabled ? t("soundOn") : t("soundOff");
+    }
+
+    function soundPatternForEvent(event) {
+      if (event?.severity === "price") {
+        return [
+          { frequency: 880, start: 0, duration: 0.06, gain: 0.045 },
+          { frequency: 1175, start: 0.08, duration: 0.08, gain: 0.038 }
+        ];
+      }
+      if (event?.severity === "wait") {
+        return [
+          { frequency: 440, start: 0, duration: 0.055, gain: 0.032 },
+          { frequency: 330, start: 0.07, duration: 0.06, gain: 0.026 }
+        ];
+      }
+      return [{ frequency: 740, start: 0, duration: 0.07, gain: 0.035 }];
+    }
+
+    function primarySoundEvent(events) {
+      return events.find(event => event.severity === "price")
+        || events.find(event => event.severity === "success")
+        || events[0]
+        || null;
+    }
+
+    async function playNoticeSound(event) {
+      if (!event || !notificationSoundEnabled || !noticeSoundSupported()) return;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      noticeAudioContext ||= new AudioContextClass();
+      if (noticeAudioContext.state === "suspended") await noticeAudioContext.resume();
+      const startAt = noticeAudioContext.currentTime + 0.02;
+      soundPatternForEvent(event).forEach(tone => {
+        const oscillator = noticeAudioContext.createOscillator();
+        const gain = noticeAudioContext.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(tone.frequency, startAt + tone.start);
+        gain.gain.setValueAtTime(0.0001, startAt + tone.start);
+        gain.gain.exponentialRampToValueAtTime(tone.gain, startAt + tone.start + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + tone.start + tone.duration);
+        oscillator.connect(gain);
+        gain.connect(noticeAudioContext.destination);
+        oscillator.start(startAt + tone.start);
+        oscillator.stop(startAt + tone.start + tone.duration + 0.02);
+      });
+    }
+
+    function sendBrowserNotice(event) {
+      if (!browserNoticeSupported() || !browserNotificationsEnabled || Notification.permission !== "granted") return;
+      try {
+        new Notification(event.title, {
+          body: event.body,
+          tag: event.id,
+          icon: "/assets/logo.svg"
+        });
+      } catch {
+        // Browser notifications are best-effort; in-page notices remain the source of truth.
+      }
+    }
+
+    function showToastEvents(events) {
+      const node = document.querySelector("#toastStack");
+      if (!node || !events.length) return;
+      const visible = events.slice(-3).reverse();
+      node.innerHTML = visible.map(event => `
+        <div class="toast ${escapeHtml(noticeSeverityClass(event))}">
+          <span class="notice-dot" aria-hidden="true"></span>
+          <span>
+            <strong>${escapeHtml(event.title)}</strong>
+            <span>${escapeHtml(event.body)}</span>
+          </span>
+        </div>
+      `).join("");
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        node.innerHTML = "";
+      }, 7000);
+    }
+
+    function addNotificationEvents(events) {
+      if (!events.length) {
+        persistNotificationState();
+        renderNotificationUI();
+        return;
+      }
+      notificationState.events = [...notificationState.events, ...events];
+      persistNotificationState();
+      showToastEvents(events);
+      events.forEach(sendBrowserNotice);
+      playNoticeSound(primarySoundEvent(events)).catch(() => {});
+      renderNotificationUI();
+    }
+
+    function browserNoticeEnabledEvent() {
+      return {
+        id: `browser_notice_enabled:${Date.now()}`,
+        type: "browser_notice_enabled",
+        severity: "success",
+        title: t("browserNoticeEnabledTitle"),
+        body: t("browserNoticeEnabledBody"),
+        createdAt: new Date().toISOString()
+      };
+    }
+
+    function processNotifications() {
+      const hitResult = collectHitNotifications({
+        hits: listings,
+        rivens,
+        seenHitKeys: notificationState.seenHitKeys,
+        initialized: notificationState.initialized,
+        lang
+      });
+      notificationState.seenHitKeys = hitResult.seenHitKeys;
+      notificationState.initialized = hitResult.initialized;
+
+      const rateResult = createRateLimitNotification({
+        meta: marketMeta,
+        previousKey: notificationState.rateLimitKey,
+        lang
+      });
+      notificationState.rateLimitKey = rateResult.key;
+
+      addNotificationEvents([...hitResult.events, rateResult.event].filter(Boolean));
+    }
+
+    function renderNotificationUI() {
+      const summary = document.querySelector("#noticeCenterButton");
+      const title = document.querySelector("#noticeTitle");
+      const body = document.querySelector("#noticeSummary");
+      const count = document.querySelector("#noticeCount");
+      const permission = document.querySelector("#requestBrowserNotices");
+      if (!summary || !title || !body || !count || !permission) return;
+
+      const latest = notificationState.events.at(-1);
+      summary.classList.remove("has-success", "has-price", "has-wait");
+      if (latest) summary.classList.add(`has-${noticeSeverityClass(latest)}`);
+      title.textContent = latest ? latest.title : t("systemNotices");
+      body.textContent = latest ? latest.body : t("noticeIdle");
+      count.textContent = String(notificationState.events.length);
+      permission.textContent = browserNoticePermissionLabel();
+      permission.disabled = browserNoticeSupported() && Notification.permission === "denied";
+      const soundButton = document.querySelector("#toggleNoticeSound");
+      if (soundButton) {
+        soundButton.textContent = noticeSoundLabel();
+        soundButton.disabled = !noticeSoundSupported();
+        soundButton.setAttribute("aria-pressed", String(notificationSoundEnabled && noticeSoundSupported()));
+      }
+      if (!document.querySelector("#noticeModal").hidden) renderNoticeModal();
+    }
+
+    function renderNoticeModal() {
+      const rows = [...notificationState.events].reverse();
+      document.querySelector("#noticeModalCount").textContent = `${rows.length} ${t("noticeCount")}`;
+      document.querySelector("#noticeList").innerHTML = rows.length ? rows.map(event => `
+        <div class="notice-item ${escapeHtml(noticeSeverityClass(event))}">
+          <span class="notice-dot" aria-hidden="true"></span>
+          <span>
+            <strong>${escapeHtml(event.title)}</strong>
+            <span>${escapeHtml(event.body)}</span>
+          </span>
+          <small>${escapeHtml(formatTime(event.createdAt))}</small>
+        </div>
+      `).join("") : `<div class="empty">${t("noticeEmpty")}</div>`;
+    }
+
+    function openNoticeModal() {
+      renderNoticeModal();
+      document.querySelector("#noticeModal").hidden = false;
+    }
+
+    function closeNoticeModal() {
+      document.querySelector("#noticeModal").hidden = true;
+    }
+
+    function clearNotices() {
+      notificationState.events = [];
+      persistNotificationState();
+      renderNotificationUI();
+      renderNoticeModal();
+    }
+
+    async function requestBrowserNotices() {
+      if (!browserNoticeSupported()) {
+        browserNotificationsEnabled = false;
+        writeBooleanStorage(browserNotificationStorageKey, false);
+        renderNotificationUI();
+        return;
+      }
+      const permission = await Notification.requestPermission();
+      browserNotificationsEnabled = permission === "granted";
+      writeBooleanStorage(browserNotificationStorageKey, browserNotificationsEnabled);
+      if (browserNotificationsEnabled && !booleanStorageHasValue(soundNotificationStorageKey)) {
+        notificationSoundEnabled = true;
+        writeBooleanStorage(soundNotificationStorageKey, true);
+      }
+      if (browserNotificationsEnabled) addNotificationEvents([browserNoticeEnabledEvent()]);
+      renderNotificationUI();
+    }
+
+    function toggleNoticeSound() {
+      notificationSoundEnabled = !notificationSoundEnabled;
+      writeBooleanStorage(soundNotificationStorageKey, notificationSoundEnabled);
+      if (notificationSoundEnabled) playNoticeSound({ severity: "success" }).catch(() => {});
+      renderNotificationUI();
     }
 
     function renderStatChips(hit) {
@@ -2046,6 +2636,9 @@
       }
       if (!document.querySelector("#hitsModal").hidden) renderAllHitsModal();
       if (!document.querySelector("#weaponsModal").hidden) renderWeaponsModal();
+      if (!document.querySelector("#noticeModal").hidden) renderNoticeModal();
+      if (!document.querySelector("#deleteConfirmModal").hidden) renderDeleteConfirmTarget();
+      renderNotificationUI();
     }
 
     let weaponOptions = catalogWeaponFamilies;
@@ -2116,6 +2709,7 @@
       }
       marketMetaReceivedAt = Date.now();
       if (!rivens.some(riven => riven.id === selectedId)) selectedId = rivens[0]?.id || null;
+      processNotifications();
       render();
       scheduleMarketRefresh();
     }
@@ -2446,6 +3040,53 @@
       document.querySelector("#addModal").hidden = true;
     }
 
+    let pendingDeleteId = null;
+
+    function pendingDeleteRiven() {
+      return rivens.find(riven => riven.id === pendingDeleteId) || null;
+    }
+
+    function renderDeleteConfirmTarget() {
+      const node = document.querySelector("#deleteConfirmTarget");
+      const confirmButton = document.querySelector("#confirmDeleteRiven");
+      if (!node || !confirmButton) return;
+      const riven = pendingDeleteRiven();
+      confirmButton.disabled = !riven;
+      if (!riven) {
+        node.innerHTML = `<strong>${escapeHtml(t("noSelection"))}</strong>`;
+        return;
+      }
+      const summary = statSummary(riven);
+      const price = displayPriceRange(riven);
+      node.innerHTML = `
+        <strong title="${escapeHtml(displayGeneratedRivenName(riven))}">${escapeHtml(displayGeneratedRivenName(riven))}</strong>
+        <span>${escapeHtml([summary, price].filter(Boolean).join(" · ") || generatedNameCore(riven.positives))}</span>
+      `;
+    }
+
+    function openDeleteConfirm() {
+      const active = activeRiven();
+      pendingDeleteId = active?.id || null;
+      renderDeleteConfirmTarget();
+      document.querySelector("#deleteConfirmModal").hidden = false;
+      document.querySelector("#cancelDeleteConfirm").focus();
+    }
+
+    function closeDeleteConfirm() {
+      pendingDeleteId = null;
+      document.querySelector("#deleteConfirmModal").hidden = true;
+    }
+
+    function confirmDeleteRiven() {
+      const id = pendingDeleteId;
+      if (!id) {
+        closeDeleteConfirm();
+        return Promise.resolve();
+      }
+      closeDeleteConfirm();
+      return deleteRiven(id);
+    }
+
     function sanitizePriceInput(event) {
       const input = event?.target || document.querySelector("#modalPrice");
       input.value = input.value.replace(/[^\d]/g, "");
@@ -2471,10 +3112,10 @@
       await refreshData({ force: true });
     }
 
-    async function deleteRiven() {
-      if (!selectedId) return;
-      const index = rivens.findIndex(riven => riven.id === selectedId);
-      await apiJson(`/api/rivens/${encodeURIComponent(selectedId)}`, { method: "DELETE" });
+    async function deleteRiven(id = selectedId) {
+      if (!id) return;
+      const index = rivens.findIndex(riven => riven.id === id);
+      await apiJson(`/api/rivens/${encodeURIComponent(id)}`, { method: "DELETE" });
       selectedId = rivens[Math.max(0, index - 1)]?.id || null;
       await refreshData({ force: true });
     }
@@ -2484,6 +3125,7 @@
       renderList();
       renderMetrics();
       renderHits();
+      renderNotificationUI();
     }
 
     document.querySelectorAll("[data-lang]").forEach(button => {
@@ -2515,7 +3157,10 @@
     document.querySelector("#activeRivensCard").addEventListener("click", openActiveRivensRoute);
     document.querySelector("#onlineHitsCard").addEventListener("click", openHitsModal);
     document.querySelector("#weaponsCard").addEventListener("click", openWeaponsModal);
-    document.querySelector("#deleteSide").addEventListener("click", () => deleteRiven().catch(error => alert(error.message)));
+    document.querySelector("#noticeCenterButton").addEventListener("click", openNoticeModal);
+    document.querySelector("#requestBrowserNotices").addEventListener("click", () => requestBrowserNotices().catch(() => renderNotificationUI()));
+    document.querySelector("#toggleNoticeSound").addEventListener("click", toggleNoticeSound);
+    document.querySelector("#deleteSide").addEventListener("click", openDeleteConfirm);
     document.querySelector("#addTop").addEventListener("click", openModal);
     document.querySelector("#addSide").addEventListener("click", openModal);
     document.querySelector("#closeModal").addEventListener("click", closeModal);
@@ -2524,8 +3169,15 @@
     document.querySelector("#addModal").addEventListener("click", event => {
       if (event.target.id === "addModal") closeModal();
     });
+    document.querySelector("#cancelDeleteConfirm").addEventListener("click", closeDeleteConfirm);
+    document.querySelector("#confirmDeleteRiven").addEventListener("click", () => confirmDeleteRiven().catch(error => alert(error.message)));
+    document.querySelector("#deleteConfirmModal").addEventListener("click", event => {
+      if (event.target.id === "deleteConfirmModal") closeDeleteConfirm();
+    });
     document.querySelector("#closeHitsModal").addEventListener("click", closeHitsModal);
     document.querySelector("#closeWeaponsModal").addEventListener("click", closeWeaponsModal);
+    document.querySelector("#closeNoticeModal").addEventListener("click", closeNoticeModal);
+    document.querySelector("#clearNotices").addEventListener("click", clearNotices);
     document.querySelector("#priceSort").addEventListener("click", () => toggleHitSort("price"));
     document.querySelector("#timeSort").addEventListener("click", () => toggleHitSort("time"));
     document.querySelector("#hitsModal").addEventListener("click", event => {
@@ -2538,6 +3190,9 @@
     });
     document.querySelector("#weaponsModal").addEventListener("click", event => {
       if (event.target.id === "weaponsModal") closeWeaponsModal();
+    });
+    document.querySelector("#noticeModal").addEventListener("click", event => {
+      if (event.target.id === "noticeModal") closeNoticeModal();
     });
     ["modalTarget", "modalPositive1", "modalPositive2", "modalPositive3", "modalNegative"].forEach(id => {
       document.querySelector(`#${id}`).addEventListener("input", updateModalGeneratedName);
@@ -2602,6 +3257,7 @@
     setInterval(() => {
       updateSourceStatus();
       updateRelativeTimes();
+      if (!document.querySelector("#noticeModal").hidden) renderNoticeModal();
     }, 1000);
     fillAllStatSelects();
     render();
