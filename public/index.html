@@ -1520,8 +1520,11 @@
     } from "/shared/riven-analysis.js";
     import {
       collectHitNotifications,
+      createNotificationMatchSignature,
       createRateLimitNotification,
-      pruneNotificationState
+      formatNotificationEvent,
+      pruneNotificationState,
+      syncNotificationMatchState
     } from "/shared/notifications.js";
 
     const dictionary = {
@@ -2016,6 +2019,24 @@
       return event.severity || "success";
     }
 
+    function displayNoticeListingName(event) {
+      const listing = event?.listingName || event?.rivenName || "";
+      if (!listing) return "";
+      const weapon = rivenWeaponFamily(event.weapon || listing.split(" ")[0] || "");
+      const displayWeapon = displayWeaponName(weapon);
+      if (!weapon || displayWeapon === weapon) return listing;
+      const escapedWeapon = weapon.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return listing.replace(new RegExp(`^${escapedWeapon}\\b`, "i"), displayWeapon);
+    }
+
+    function localizedNotice(event) {
+      if (!event) return { title: "", body: "" };
+      return formatNotificationEvent({
+        ...event,
+        listingName: displayNoticeListingName(event) || event.listingName
+      }, lang);
+    }
+
     function persistNotificationState() {
       notificationState = pruneNotificationState(notificationState);
       writeJsonStorage(notificationStorageKey, notificationState);
@@ -2087,9 +2108,10 @@
 
     function sendBrowserNotice(event) {
       if (!browserNoticeSupported() || !browserNotificationsEnabled || Notification.permission !== "granted") return;
+      const notice = localizedNotice(event);
       try {
-        new Notification(event.title, {
-          body: event.body,
+        new Notification(notice.title, {
+          body: notice.body,
           tag: event.id,
           icon: "/assets/logo.svg"
         });
@@ -2102,15 +2124,18 @@
       const node = document.querySelector("#toastStack");
       if (!node || !events.length) return;
       const visible = events.slice(-3).reverse();
-      node.innerHTML = visible.map(event => `
+      node.innerHTML = visible.map(event => {
+        const notice = localizedNotice(event);
+        return `
         <div class="toast ${escapeHtml(noticeSeverityClass(event))}">
           <span class="notice-dot" aria-hidden="true"></span>
           <span>
-            <strong>${escapeHtml(event.title)}</strong>
-            <span>${escapeHtml(event.body)}</span>
+            <strong>${escapeHtml(notice.title)}</strong>
+            <span>${escapeHtml(notice.body)}</span>
           </span>
         </div>
-      `).join("");
+      `;
+      }).join("");
       if (toastTimer) clearTimeout(toastTimer);
       toastTimer = setTimeout(() => {
         node.innerHTML = "";
@@ -2143,6 +2168,7 @@
     }
 
     function processNotifications() {
+      notificationState = syncNotificationMatchState(notificationState, createNotificationMatchSignature(rivens));
       const hitResult = collectHitNotifications({
         hits: listings,
         rivens,
@@ -2172,10 +2198,11 @@
       if (!summary || !title || !body || !count || !permission) return;
 
       const latest = notificationState.events.at(-1);
+      const latestNotice = localizedNotice(latest);
       summary.classList.remove("has-success", "has-price", "has-wait");
       if (latest) summary.classList.add(`has-${noticeSeverityClass(latest)}`);
-      title.textContent = latest ? latest.title : t("systemNotices");
-      body.textContent = latest ? latest.body : t("noticeIdle");
+      title.textContent = latest ? latestNotice.title : t("systemNotices");
+      body.textContent = latest ? latestNotice.body : t("noticeIdle");
       count.textContent = String(notificationState.events.length);
       permission.textContent = browserNoticePermissionLabel();
       permission.disabled = browserNoticeSupported() && Notification.permission === "denied";
@@ -2191,16 +2218,19 @@
     function renderNoticeModal() {
       const rows = [...notificationState.events].reverse();
       document.querySelector("#noticeModalCount").textContent = `${rows.length} ${t("noticeCount")}`;
-      document.querySelector("#noticeList").innerHTML = rows.length ? rows.map(event => `
+      document.querySelector("#noticeList").innerHTML = rows.length ? rows.map(event => {
+        const notice = localizedNotice(event);
+        return `
         <div class="notice-item ${escapeHtml(noticeSeverityClass(event))}">
           <span class="notice-dot" aria-hidden="true"></span>
           <span>
-            <strong>${escapeHtml(event.title)}</strong>
-            <span>${escapeHtml(event.body)}</span>
+            <strong>${escapeHtml(notice.title)}</strong>
+            <span>${escapeHtml(notice.body)}</span>
           </span>
           <small>${escapeHtml(formatTime(event.createdAt))}</small>
         </div>
-      `).join("") : `<div class="empty">${t("noticeEmpty")}</div>`;
+      `;
+      }).join("") : `<div class="empty">${t("noticeEmpty")}</div>`;
     }
 
     function openNoticeModal() {

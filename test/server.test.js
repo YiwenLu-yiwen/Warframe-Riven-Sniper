@@ -67,7 +67,11 @@ describe("Frontend preferences", () => {
     assert.match(html, /id="noticeModal"/);
     assert.match(html, /id="requestBrowserNotices"/);
     assert.match(html, /collectHitNotifications/);
+    assert.match(html, /createNotificationMatchSignature/);
     assert.match(html, /createRateLimitNotification/);
+    assert.match(html, /formatNotificationEvent/);
+    assert.match(html, /localizedNotice/);
+    assert.match(html, /syncNotificationMatchState/);
     assert.match(html, /new Notification/);
   });
 
