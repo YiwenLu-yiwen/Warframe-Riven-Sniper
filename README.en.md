@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img alt="Node.js >=20" src="https://img.shields.io/badge/node-%3E%3D20-43853d">
+  <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-43853d">
   <img alt="Version v1.0" src="https://img.shields.io/badge/version-v1.0-d6a84c">
   <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-d6a84c">
   <img alt="Data source Warframe Market" src="https://img.shields.io/badge/source-warframe.market-78b7bd">

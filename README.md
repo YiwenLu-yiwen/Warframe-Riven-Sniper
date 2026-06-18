@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Warframe Riven Sniper logo" width="128" height="128">
+  <img src="assets/logo.svg" alt="Warframe 裂罅狙击标志" width="128" height="128">
 </p>
 
-<h1 align="center">Warframe Riven Sniper</h1>
+<h1 align="center">Warframe 裂罅狙击</h1>
 
 <p align="center">
   面向武器系列的裂罅拍卖狙击工具，使用保守的 Warframe.Market 刷新逻辑。
 </p>
 
 <p align="center">
-  <img alt="Node.js >=20" src="https://img.shields.io/badge/node-%3E%3D20-43853d">
-  <img alt="Version v1.0" src="https://img.shields.io/badge/version-v1.0-d6a84c">
-  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-d6a84c">
-  <img alt="Data source Warframe Market" src="https://img.shields.io/badge/source-warframe.market-78b7bd">
-  <img alt="Riven weapons 423" src="https://img.shields.io/badge/riven_weapons-423-1d1a14">
+  <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-43853d">
+  <img alt="版本 v1.0" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-v1.0-d6a84c">
+  <img alt="许可证 MIT" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-d6a84c">
+  <img alt="数据源 Warframe Market" src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90-warframe.market-78b7bd">
+  <img alt="裂罅武器 423" src="https://img.shields.io/badge/%E8%A3%82%E7%BD%85%E6%AD%A6%E5%99%A8-423-1d1a14">
 </p>
 
 <p align="center">
