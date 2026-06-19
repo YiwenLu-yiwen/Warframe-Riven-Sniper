@@ -1,15 +1,19 @@
 import { findWeaponCatalogEntry, weaponCatalog } from "./catalog.js";
 
-const MARKET_BASE_URL = "https://api.warframe.market/v1";
+const MARKET_V2_BASE_URL = "https://api.warframe.market/v2";
+// WFM v2 exposes riven manifests, but not riven auction search. The official
+// site still calls this API endpoint for auction search results.
+const MARKET_AUCTION_COMPAT_BASE_URL = "https://api.warframe.market/v1";
 const RIVEN_MARKET_BASE_URL = "https://riven.market/_modules/riven/showrivens.php";
 const VARIANT_WORDS = new Set(["prime", "vandal", "wraith"]);
-export const MARKET_REFRESH_INTERVAL_MS = 60000;
+export const MARKET_REFRESH_INTERVAL_MS = 30000;
 export const MARKET_MIN_REFRESH_INTERVAL_MS = 10000;
 export const MARKET_MIN_REQUEST_INTERVAL_MS = 1000;
 export const MARKET_RATE_LIMIT_BACKOFF_MS = 10000;
 export const MARKET_FORCE_REFRESH_WEAPON_LIMIT = 3;
 const MARKET_RATE_LIMIT_STATUS = 429;
 const RIVEN_MARKET_TIMEOUT_MS = 8000;
+const MARKET_V2_WEAPON_CACHE_MS = 6 * 60 * 60 * 1000;
 
 const attributeLabels = {
   "base_damage_/_melee_damage": "Base Damage",
@@ -99,6 +103,7 @@ const rivenMarketToAppStat = new Map(
 const cache = new Map();
 const weaponCache = new Map();
 const marketUrlToFamily = new Map(weaponCatalog.map(weapon => [weapon.marketUrlName, weapon.family]));
+let v2RivenWeaponsCache = null;
 let marketRequestChain = Promise.resolve();
 let lastMarketRequestAt = 0;
 
@@ -143,10 +148,6 @@ export function appStatKey(marketKey) {
   return marketToAppStat.get(marketKey) || marketKey;
 }
 
-export function rivenMarketStatKey(appKey) {
-  return appToRivenMarketStat[appKey] || appKey;
-}
-
 export function appStatKeyFromRivenMarket(marketKey) {
   return rivenMarketToAppStat.get(marketKey) || marketKey;
 }
@@ -174,11 +175,6 @@ export function weaponFamilyFromMarketName(value) {
 
 export function auctionOwnerIsOnline(owner = {}) {
   return owner.status === "online" || owner.status === "ingame";
-}
-
-export function uniqueWeaponFamiliesFromAuctions(auctions) {
-  return [...new Set(auctions.map(auction => weaponFamilyFromMarketName(auction.item?.weapon_url_name || "")).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b));
 }
 
 export function formatAuctionAttributes(attributes = []) {
@@ -238,15 +234,6 @@ export function marketSearchParamsForRiven(riven) {
   return params;
 }
 
-function marketSearchParamsForWeapon(weapon, { sortBy = "" } = {}) {
-  const params = {
-    type: "riven",
-    weapon_url_name: weaponUrlNameFromFamily(weapon)
-  };
-  if (sortBy) params.sort_by = sortBy;
-  return params;
-}
-
 export function marketHitMatchesRiven(hit, riven) {
   const positiveKeys = new Set((hit.attributes || []).filter(attr => attr.positive).map(attr => attr.key));
   const negativeKeys = new Set((hit.attributes || []).filter(attr => !attr.positive).map(attr => attr.key));
@@ -261,13 +248,21 @@ function marketPriceNumber(price) {
   return Number.isFinite(value) ? value : NaN;
 }
 
+export function effectiveMinPriceForRiven(riven = {}) {
+  const configuredMin = marketPriceNumber(riven.minPrice);
+  if (Number.isFinite(configuredMin) && configuredMin > 0) return configuredMin;
+  const max = marketPriceNumber(riven.price);
+  return Number.isFinite(max) && max > 0 ? max * 0.1 : NaN;
+}
+
 function marketHitMatchesRivenPrice(hit, riven) {
-  const hasMin = Boolean(String(riven.minPrice || "").replace(/[^\d]/g, ""));
+  const minPrice = effectiveMinPriceForRiven(riven);
+  const hasMin = Number.isFinite(minPrice) && minPrice > 0;
   const hasMax = Boolean(String(riven.price || "").replace(/[^\d]/g, ""));
   if (!hasMin && !hasMax) return true;
   const actual = marketPriceNumber(hit.price);
   if (!Number.isFinite(actual)) return false;
-  if (hasMin && actual <= marketPriceNumber(riven.minPrice)) return false;
+  if (hasMin && actual <= minPrice) return false;
   if (hasMax && actual >= marketPriceNumber(riven.price)) return false;
   return true;
 }
@@ -286,6 +281,16 @@ function marketSortForRivens(rivens = []) {
   const hasMax = list.some(hasConfiguredMaxPrice);
   const hasMin = list.some(hasConfiguredMinPrice);
   return hasMin && !hasMax ? "price_desc" : "price_asc";
+}
+
+function marketHeaders() {
+  return {
+    "accept": "application/json",
+    "language": "zh-hans",
+    "platform": "pc",
+    "crossplay": "true",
+    "user-agent": "WarframeRivenSniperPrototype/0.1"
+  };
 }
 
 function wait(ms) {
@@ -476,10 +481,7 @@ async function queuedMarketFetch(url, {
     if (delay) await sleep(delay);
 
     const response = await fetchImpl(url, {
-      headers: {
-        "accept": "application/json",
-        "user-agent": "WarframeRivenSniperPrototype/0.1"
-      }
+      headers: marketHeaders()
     });
     lastMarketRequestAt = Date.now();
     return response;
@@ -516,20 +518,17 @@ async function readMarketPayload(url, {
   }
 }
 
-async function readMarketPayloadWithoutQueue(url) {
-  const response = await fetch(url, {
-    headers: {
-      "accept": "application/json",
-      "user-agent": "WarframeRivenSniperPrototype/0.1"
-    }
+async function readMarketDataV2(url, { fetchImpl = fetch } = {}) {
+  const response = await fetchImpl(url, {
+    headers: marketHeaders()
   });
-  if (!response.ok) throw new Error(`Warframe.Market returned ${response.status}`);
+  if (!response.ok) throw new Error(`Warframe.Market v2 returned ${response.status}`);
   const body = await response.json();
-  return body.payload || {};
+  return body.data;
 }
 
 export async function fetchMarketHits({ weapon = "Rubico", scope = "online", limit = 50 } = {}) {
-  const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
+  const url = new URL(`${MARKET_AUCTION_COMPAT_BASE_URL}/auctions/search`);
   url.searchParams.set("type", "riven");
   url.searchParams.set("weapon_url_name", weaponUrlNameFromFamily(weapon));
   const payload = await readMarketPayload(url);
@@ -539,22 +538,23 @@ export async function fetchMarketHits({ weapon = "Rubico", scope = "online", lim
     .slice(0, Math.max(1, Math.min(Number(limit) || 50, 100)));
 }
 
-async function fetchMarketHitsForRiven(riven, { scope = "online", limit = 50, ...requestOptions } = {}) {
-  const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
-  Object.entries(marketSearchParamsForRiven(riven)).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
-  });
-  const payload = await readMarketPayload(url, requestOptions);
-  return (payload.auctions || [])
-    .map(normalizeMarketAuction)
-    .filter(hit => scope === "all" || hit.status === "online")
-    .filter(hit => marketHitMatchesRiven(hit, riven))
-    .slice(0, Math.max(1, Math.min(Number(limit) || 50, 100)));
+function marketQueryParamsForRivens(rivens = []) {
+  const [first] = rivens;
+  const params = marketSearchParamsForRiven(first || {});
+  params.sort_by = marketSortForRivens(rivens);
+  return params;
 }
 
-async function fetchMarketHitsForWeapon(weapon, { scope = "online", rivens = [], ...requestOptions } = {}) {
-  const url = new URL(`${MARKET_BASE_URL}/auctions/search`);
-  Object.entries(marketSearchParamsForWeapon(weapon, { sortBy: marketSortForRivens(rivens) })).forEach(([key, value]) => {
+function marketQueryKey(params = {}) {
+  const entries = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .sort(([a], [b]) => a.localeCompare(b));
+  return new URLSearchParams(entries).toString();
+}
+
+async function fetchMarketHitsForRivenQuery(queryGroup, { scope = "online", ...requestOptions } = {}) {
+  const url = new URL(`${MARKET_AUCTION_COMPAT_BASE_URL}/auctions/search`);
+  Object.entries(queryGroup.params).forEach(([key, value]) => {
     url.searchParams.set(key, value);
   });
   const payload = await readMarketPayload(url, requestOptions);
@@ -571,7 +571,9 @@ function cacheKeyForRivens(rivens, scope, namespace = "default") {
       id: riven.id,
       target: riven.target,
       positives: riven.positives || [],
-      negative: riven.negative || ""
+      negative: riven.negative || "",
+      minPrice: riven.minPrice || "",
+      price: riven.price || ""
     }))
   });
 }
@@ -588,8 +590,27 @@ function groupRivensByWeapon(rivens) {
   return [...groups.values()];
 }
 
-function weaponCacheKey({ weaponUrlName, scope, namespace = "default" }) {
-  return JSON.stringify({ namespace, scope, weaponUrlName });
+function groupRivensByMarketQuery(rivens) {
+  const groups = new Map();
+  rivens.forEach(riven => {
+    const params = marketQueryParamsForRivens([riven]);
+    const queryKey = marketQueryKey(params);
+    if (!groups.has(queryKey)) {
+      groups.set(queryKey, {
+        weapon: riven.target,
+        weaponUrlName: weaponUrlNameFromFamily(riven.target),
+        queryKey,
+        params,
+        rivens: []
+      });
+    }
+    groups.get(queryKey).rivens.push(riven);
+  });
+  return [...groups.values()];
+}
+
+function weaponCacheKey({ weaponUrlName, scope, namespace = "default", queryKey = "" }) {
+  return JSON.stringify({ namespace, scope, weaponUrlName, queryKey });
 }
 
 function cacheMeta({
@@ -606,7 +627,7 @@ function cacheMeta({
 } = {}) {
   const cacheAgeMs = cached ? Date.now() - cached.refreshedAt : 0;
   return {
-    source: "warframe.market + riven.market",
+    source: "warframe.market API v2 manifests + API auction search + riven.market",
     status,
     rateLimited: status === "rate_limited",
     refreshIntervalMs,
@@ -634,16 +655,20 @@ async function fetchCachedMarketHitsForWeapon(group, {
   cacheNamespace,
   refreshIntervalMs
 }) {
-  const key = weaponCacheKey({ weaponUrlName: group.weaponUrlName, scope, namespace: cacheNamespace });
+  const key = weaponCacheKey({
+    weaponUrlName: group.weaponUrlName,
+    scope,
+    namespace: `${cacheNamespace}:warframe.market:auction-query`,
+    queryKey: group.queryKey
+  });
   const cached = weaponCache.get(key);
   const now = Date.now();
   if (!force && cached && now - cached.refreshedAt < refreshIntervalMs) {
     return { hits: cached.data.map(cloneHit), searched: false, cached: true };
   }
 
-  const hits = await fetchMarketHitsForWeapon(group.weapon, {
+  const hits = await fetchMarketHitsForRivenQuery(group, {
     scope,
-    rivens: group.rivens,
     fetchImpl,
     sleep,
     minRequestIntervalMs,
@@ -699,7 +724,7 @@ export async function fetchLiveHitsForRivens(rivens, {
     return {
       data: [],
       meta: {
-        source: "warframe.market + riven.market",
+        source: "warframe.market API v2 manifests + API auction search + riven.market",
         refreshIntervalMs: resolvedRefreshIntervalMs,
         cacheAgeMs: 0,
         nextRefreshInMs: resolvedRefreshIntervalMs,
@@ -711,8 +736,9 @@ export async function fetchLiveHitsForRivens(rivens, {
   const key = cacheKeyForRivens(rivens, scope, cacheNamespace);
   const now = Date.now();
   const cached = cache.get(key);
-  const groups = groupRivensByWeapon(rivens);
-  const forceLimited = force && groups.length > MARKET_FORCE_REFRESH_WEAPON_LIMIT;
+  const marketGroups = groupRivensByMarketQuery(rivens);
+  const weaponGroups = groupRivensByWeapon(rivens);
+  const forceLimited = force && marketGroups.length > MARKET_FORCE_REFRESH_WEAPON_LIMIT;
   if (!force && cached && now - cached.refreshedAt < resolvedRefreshIntervalMs) {
     const cacheAgeMs = now - cached.refreshedAt;
     return {
@@ -725,7 +751,7 @@ export async function fetchLiveHitsForRivens(rivens, {
           nextRefreshInMs: Math.max(0, resolvedRefreshIntervalMs - cacheAgeMs),
           weaponsSearched: cached.weaponsSearched || 0,
           rivensSearched: rivens.length,
-          groups,
+          groups: weaponGroups,
           rateLimitBackoffMs
         }),
         cacheAgeMs,
@@ -738,7 +764,8 @@ export async function fetchLiveHitsForRivens(rivens, {
   let rivenMarketSearched = 0;
   const sourceErrors = [];
   try {
-    for (const group of groups) {
+    const warframeMarketHitsByRivenId = new Map();
+    for (const group of marketGroups) {
       const weaponResult = await fetchCachedMarketHitsForWeapon(group, {
         scope,
         force: force && !forceLimited,
@@ -751,6 +778,15 @@ export async function fetchLiveHitsForRivens(rivens, {
         refreshIntervalMs: resolvedRefreshIntervalMs
       });
       if (weaponResult.searched) weaponsSearched += 1;
+      for (const riven of group.rivens) {
+        const matches = weaponResult.hits
+          .filter(hit => marketHitMatchesRiven(hit, riven))
+          .slice(0, Math.max(1, Math.min(Number(limitPerRiven) || 50, 100)));
+        warframeMarketHitsByRivenId.set(riven.id, matches);
+      }
+    }
+
+    for (const group of weaponGroups) {
       const rivenMarketResult = await fetchCachedRivenMarketHitsForWeapon(group, {
         scope,
         force: force && !forceLimited,
@@ -760,9 +796,11 @@ export async function fetchLiveHitsForRivens(rivens, {
       });
       if (rivenMarketResult.searched) rivenMarketSearched += 1;
       if (rivenMarketResult.error) sourceErrors.push(rivenMarketResult.error);
-      const groupHits = [...weaponResult.hits, ...rivenMarketResult.hits];
       for (const riven of group.rivens) {
-        const matches = groupHits
+        const matches = [
+          ...(warframeMarketHitsByRivenId.get(riven.id) || []),
+          ...rivenMarketResult.hits
+        ]
           .filter(hit => marketHitMatchesRiven(hit, riven))
           .slice(0, Math.max(1, Math.min(Number(limitPerRiven) || 50, 100)));
         data.push(...matches.map(hit => ({ ...hit, rivenId: riven.id })));
@@ -781,9 +819,10 @@ export async function fetchLiveHitsForRivens(rivens, {
           retryAfterMs,
           weaponsSearched,
           rivensSearched: rivens.length,
-          groups,
+          groups: weaponGroups,
           rateLimitBackoffMs,
-          forceLimited
+          forceLimited,
+          sourceErrors: sourceErrors.slice(0, 3)
         })
       };
     }
@@ -795,15 +834,15 @@ export async function fetchLiveHitsForRivens(rivens, {
     data: data.map(cloneHit),
     meta: {
       ...cacheMeta({
-        status: (weaponsSearched + rivenMarketSearched) ? "fresh" : "cached",
-        cached: { refreshedAt: now },
-        refreshIntervalMs: resolvedRefreshIntervalMs,
-        nextRefreshInMs: resolvedRefreshIntervalMs,
-        weaponsSearched: weaponsSearched + rivenMarketSearched,
-        rivensSearched: rivens.length,
-        groups,
-        rateLimitBackoffMs,
-        forceLimited
+      status: (weaponsSearched + rivenMarketSearched) ? "fresh" : "cached",
+      cached: { refreshedAt: now },
+      refreshIntervalMs: resolvedRefreshIntervalMs,
+      nextRefreshInMs: resolvedRefreshIntervalMs,
+      weaponsSearched: weaponsSearched + rivenMarketSearched,
+      rivensSearched: rivens.length,
+      groups: weaponGroups,
+      rateLimitBackoffMs,
+      forceLimited
       }),
       sources: {
         "warframe.market": { searchedWeapons: weaponsSearched },
@@ -816,17 +855,31 @@ export async function fetchLiveHitsForRivens(rivens, {
   };
 }
 
-export async function fetchMarketWeaponFamilies({ scope = "all", limit = 500 } = {}) {
-  const payload = await readMarketPayloadWithoutQueue(`${MARKET_BASE_URL}/auctions`);
-  const auctions = (payload.auctions || [])
-    .filter(auction => scope === "all" || auctionOwnerIsOnline(auction.owner))
-    .slice(0, Math.max(1, Math.min(Number(limit) || 500, 2000)));
+export async function fetchMarketWeaponFamilies({ scope = "all", limit = 2000, force = false } = {}) {
+  const now = Date.now();
+  if (!force && v2RivenWeaponsCache && now - v2RivenWeaponsCache.refreshedAt < MARKET_V2_WEAPON_CACHE_MS) {
+    return v2RivenWeaponsCache.data.slice(0, Math.max(1, Math.min(Number(limit) || 2000, 2000)));
+  }
 
-  return uniqueWeaponFamiliesFromAuctions(auctions).map(family => ({
+  const weapons = await readMarketDataV2(`${MARKET_V2_BASE_URL}/riven/weapons`);
+  const data = (Array.isArray(weapons) ? weapons : []).map(weapon => {
+    const family = weapon.i18n?.en?.name || weaponFamilyFromMarketName(weapon.slug);
+    return {
     family,
     label: family,
-    labels: { en: family, zh: family },
-    group: null,
+    labels: {
+      en: family,
+      zh: weapon.i18n?.["zh-hans"]?.name || family
+    },
+    group: weapon.group || null,
+    marketUrlName: weapon.slug,
+    disposition: weapon.disposition ?? null,
+    reqMasteryRank: weapon.reqMasteryRank ?? null,
+    rivenType: weapon.rivenType || null,
     rivenEligible: true
-  }));
+    };
+  }).sort((a, b) => a.family.localeCompare(b.family));
+
+  v2RivenWeaponsCache = { data, refreshedAt: now };
+  return data.slice(0, Math.max(1, Math.min(Number(limit) || 2000, 2000)));
 }

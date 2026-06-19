@@ -1,5 +1,5 @@
 import { findWeaponCatalogEntry, statCatalog, weaponCatalog } from "./catalog.js";
-import { fetchLiveHitsForRivens, MARKET_REFRESH_INTERVAL_MS } from "./market.js";
+import { fetchLiveHitsForRivens, fetchMarketWeaponFamilies, MARKET_REFRESH_INTERVAL_MS } from "./market.js";
 import { listRivens } from "./store.js";
 import { analyzeRiven, dispositionSummary, recommendedAnalysisStats } from "../shared/riven-analysis.js";
 
@@ -83,7 +83,25 @@ export function getRivenAnalysis({ weapon = "Rubico", positives = "", negative =
 }
 
 export async function listLiveWeapons({ lang = "en", query = "" } = {}) {
-  return listWeapons({ lang, query });
+  try {
+    const needle = query.trim().toLowerCase();
+    const weapons = await fetchMarketWeaponFamilies({ limit: 2000 });
+    return weapons
+      .filter(weapon => {
+        const haystack = `${weapon.family} ${weapon.labels?.zh || ""} ${weapon.group || ""}`.toLowerCase();
+        return !needle || haystack.includes(needle);
+      })
+      .map(weapon => ({
+        ...weapon,
+        label: lang === "zh" ? (weapon.labels?.zh || weapon.family) : weapon.family,
+        analysis: {
+          disposition: dispositionSummary(weapon.disposition),
+          recommended: recommendedAnalysisStats({ group: weapon.group, statCatalog, lang })
+        }
+      }));
+  } catch {
+    return listWeapons({ lang, query });
+  }
 }
 
 export async function listHits({ scope = "online", rivenId, force = false, refreshMs } = {}) {
@@ -93,12 +111,18 @@ export async function listHits({ scope = "online", rivenId, force = false, refre
 
 export async function health() {
   const rivens = listRivens();
+  let weaponCount = weaponCatalog.length;
+  try {
+    weaponCount = (await fetchMarketWeaponFamilies({ limit: 2000 })).length;
+  } catch {
+    weaponCount = weaponCatalog.length;
+  }
   return {
     status: "ok",
-    weapons: weaponCatalog.length,
+    weapons: weaponCount,
     rivens: rivens.length,
     onlineHits: 0,
     refreshIntervalMs: MARKET_REFRESH_INTERVAL_MS,
-    source: "warframe.market, riven.market, warframe wiki, warframestat.us"
+    source: "warframe.market API v2 manifests + API auction search, riven.market secondary source, warframe wiki, warframestat.us"
   };
 }
