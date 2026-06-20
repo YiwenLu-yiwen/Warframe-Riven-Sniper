@@ -7,6 +7,7 @@ import { createRiven, deleteRiven, listRivens, updateRiven } from "./store.js";
 
 const root = resolve(".");
 const htmlPath = join(root, "public", "index.html");
+const defaultLanguage = "en";
 
 function sendJson(res, status, body) {
   const payload = JSON.stringify(body);
@@ -65,7 +66,7 @@ export async function handleRequest(req, res) {
   if (url.pathname === "/api/weapons" && req.method === "GET") {
     return sendJson(res, 200, {
       data: await listLiveWeapons({
-        lang: url.searchParams.get("lang") || "en",
+        lang: url.searchParams.get("lang") || defaultLanguage,
         query: url.searchParams.get("query") || ""
       })
     });
@@ -76,7 +77,7 @@ export async function handleRequest(req, res) {
     const data = listStats({
       weapon,
       polarity: url.searchParams.get("polarity") || "positive",
-      lang: url.searchParams.get("lang") || "en"
+      lang: url.searchParams.get("lang") || defaultLanguage
     });
     if (!data) return sendError(res, 404, "WEAPON_NOT_FOUND", `No Riven-capable weapon family named ${weapon}.`);
     return sendJson(res, 200, { data });
@@ -87,14 +88,14 @@ export async function handleRequest(req, res) {
       weapon: url.searchParams.get("weapon") || "Rubico",
       positives: url.searchParams.get("positives") || "",
       negative: url.searchParams.get("negative") || "",
-      lang: url.searchParams.get("lang") || "en"
+      lang: url.searchParams.get("lang") || defaultLanguage
     });
     if (!data) return sendError(res, 404, "WEAPON_NOT_FOUND", `No Riven-capable weapon family named ${url.searchParams.get("weapon") || "Rubico"}.`);
     return sendJson(res, 200, { data });
   }
 
   if (url.pathname === "/api/rivens" && req.method === "GET") {
-    const lang = url.searchParams.get("lang") || "en";
+    const lang = url.searchParams.get("lang") || defaultLanguage;
     return sendJson(res, 200, { data: listRivens().map(riven => enrichRiven(riven, { lang })) });
   }
 

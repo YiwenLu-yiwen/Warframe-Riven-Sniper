@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-Hans">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Warframe 裂罅狙击 v1.2</title>
+  <title>Warframe Riven Sniper v1.2</title>
   <style>
     :root {
       --bg: #12100c;
@@ -1428,16 +1428,16 @@
       </div>
       <div class="search-row">
         <div class="smart-search">
-          <input id="search" type="search" aria-label="智能搜索" placeholder="搜索武器、词条、卖家、价格、时间">
-          <span class="search-help" id="searchHelp" data-i18n="searchHelp">试试：暴击伤害、卖家名、&lt;450p、&gt;100p、在线</span>
+          <input id="search" type="search" aria-label="Smart search" placeholder="Search weapon, stat, seller, price, time">
+          <span class="search-help" id="searchHelp" data-i18n="searchHelp">Try: Critical Damage, seller name, &lt;450p, &gt;100p, online</span>
         </div>
         <div class="seg" aria-label="Seller scope">
           <button id="onlineOnly" aria-pressed="true" data-i18n="onlineOnly">只看在线</button>
           <button id="includeOffline" aria-pressed="false" data-i18n="includeOffline">包含离线</button>
         </div>
         <div class="seg" aria-label="Language">
-          <button data-lang="en" aria-pressed="false">EN</button>
-          <button data-lang="zh" aria-pressed="true">中文</button>
+          <button data-lang="en" aria-pressed="true">EN</button>
+          <button data-lang="zh" aria-pressed="false">中文</button>
         </div>
       </div>
       <button class="primary" id="addTop" data-i18n="addRiven">新增裂罅</button>
@@ -1999,13 +1999,14 @@
     const refreshIntervalStorageKey = "warframe-riven-sniper-refresh-seconds";
     const defaultRefreshSeconds = 60;
     const minimumRefreshSeconds = 10;
+    const defaultLanguage = "en";
 
     function storedLanguage() {
       try {
         const value = window.localStorage?.getItem(languageStorageKey);
-        return value === "en" || value === "zh" ? value : "zh";
+        return value === "en" || value === "zh" ? value : defaultLanguage;
       } catch {
-        return "zh";
+        return defaultLanguage;
       }
     }
 

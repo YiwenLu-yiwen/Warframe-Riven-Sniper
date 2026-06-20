@@ -1,115 +1,115 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="Warframe 裂罅狙击标志" width="128" height="128">
+  <img src="assets/logo.svg" alt="Warframe Riven Sniper logo" width="128" height="128">
 </p>
 
-<h1 align="center">Warframe 裂罅狙击</h1>
+<h1 align="center">Warframe Riven Sniper</h1>
 
 <p align="center">
-  面向武器系列的裂罅拍卖狙击工具，使用保守的双市场刷新逻辑。
+  A weapon-family Riven auction sniper with conservative dual-market refresh behavior.
 </p>
 
 <p align="center">
   <img alt="Node.js 20+" src="https://img.shields.io/badge/Node.js-20%2B-43853d">
-  <img alt="版本 v1.2" src="https://img.shields.io/badge/%E7%89%88%E6%9C%AC-v1.2-d6a84c">
-  <img alt="许可证 MIT" src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-MIT-d6a84c">
-  <img alt="数据源 warframe.market + riven.market" src="https://img.shields.io/badge/%E6%95%B0%E6%8D%AE%E6%BA%90-warframe.market%20%2B%20riven.market-78b7bd">
-  <img alt="裂罅武器 423" src="https://img.shields.io/badge/%E8%A3%82%E7%BD%85%E6%AD%A6%E5%99%A8-423-1d1a14">
+  <img alt="Version v1.2" src="https://img.shields.io/badge/version-v1.2-d6a84c">
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-d6a84c">
+  <img alt="Data source warframe.market + riven.market" src="https://img.shields.io/badge/source-warframe.market%20%2B%20riven.market-78b7bd">
+  <img alt="Riven weapons 423" src="https://img.shields.io/badge/riven_weapons-423-1d1a14">
 </p>
 
 <p align="center">
-  <img alt="简体中文" src="https://img.shields.io/badge/README-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-78b7bd?style=for-the-badge">
-  <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/README-English-d6a84c?style=for-the-badge"></a>
+  <a href="README.zh.md"><img alt="简体中文" src="https://img.shields.io/badge/README-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-78b7bd?style=for-the-badge"></a>
+  <img alt="English" src="https://img.shields.io/badge/README-English-d6a84c?style=for-the-badge">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/warframe-riven-sniper-zh.png" alt="Warframe 裂罅狙击中文界面截图" width="960">
+  <img src="assets/screenshots/warframe-riven-sniper-en.png" alt="Warframe Riven Sniper English UI screenshot" width="960">
 </p>
 
-这是一个用于追踪 Warframe 裂罅拍卖订单的小型网页应用。你可以按武器系列、正面词条、可选负面词条、卖家状态、价格和订单时间来管理裂罅狙击目标。
+A small web app for tracking Warframe Riven auction listings by weapon family, selected positive stats, optional negative stat, seller status, price, and listing time.
 
-应用的核心流程很简单：在某个武器下创建一个或多个裂罅监控项，保守地刷新 Warframe.Market 和 Riven.market 市场数据，然后把匹配的可联系卖家订单展示出来，并提供可直接复制到游戏内私聊的消息。
+The app keeps the workflow simple: create one or more Riven watches under a weapon, refresh Warframe.Market and Riven.market data conservatively, and surface matching reachable listings with a copy-ready in-game whisper.
 
-### 功能
+### Features
 
-- 一个武器系列下可以管理多个裂罅。
-- 使用生成的「可拥有裂罅」武器系列目录。
-- 支持英文和中文武器名、词条名显示。
-- 可按正面词条和负面词条过滤市场结果。
-- 同时整合 Warframe.Market 和 Riven.market 的裂罅订单；列表中使用 `WM` / `RM` 标记来源。
-- 将 Warframe.Market 的 `online` 和 `ingame` 卖家都视为可联系卖家，Riven.market 的在线 / 游戏内状态也会归一化为在线命中。
-- 使用按武器分组、缓存复用和限流退避的刷新逻辑。
-- 系统通知会提醒新的在线订单、低于最高价阈值的命中和限流等待状态。
-- 本地裂罅配置保存在 `data/rivens.json`，并已被 git 忽略。
+- Tracks multiple Rivens per weapon family.
+- Uses a generated catalog of Riven-capable weapon families.
+- Supports English and Chinese weapon/stat display names.
+- Filters market results by positive and negative Riven stats.
+- Combines Warframe.Market and Riven.market Riven listings; rows show `WM` / `RM` source tags.
+- Treats Warframe.Market `online` and `ingame` sellers as reachable, and normalizes Riven.market online / in-game states into online hits.
+- Refreshes market data with per-weapon grouping, cache reuse, and rate-limit backoff.
+- Shows system notices for new online listings, below-threshold prices, and rate-limit waiting states.
+- Keeps local Riven watches in `data/rivens.json`, ignored by git.
 
-### 快速开始
+### Quick Start
 
 ```bash
 npm install
 npm start
 ```
 
-打开 `http://localhost:4173`。
+Open `http://localhost:4173`.
 
-### 命令
+### Commands
 
-| 命令 | 说明 |
+| Command | Description |
 | --- | --- |
-| `npm start` | 启动本地网页服务器 |
-| `node scripts/build-riven-weapon-catalog.mjs` | 重新生成裂罅武器目录 |
+| `npm start` | Start the local web server |
+| `node scripts/build-riven-weapon-catalog.mjs` | Rebuild the generated Riven weapon catalog |
 
-### 架构
+### Architecture
 
-| 路径 | 作用 |
+| Path | Purpose |
 | --- | --- |
-| `public/index.html` | 单页前端界面 |
-| `server/app.js` | 静态文件服务和 JSON API 路由 |
-| `server/market.js` | Warframe.Market 与 Riven.market 订单标准化、缓存、分组和限流处理 |
-| `server/riven-weapons.generated.js` | 根据 Warframe Wiki 裂罅倾向表和 Warframe Status 本地化物品数据生成的武器目录 |
-| `server/store.js` | 将本地裂罅监控项持久化到 `data/rivens.json` |
+| `public/index.html` | Single-page UI |
+| `server/app.js` | Static file serving and JSON API routes |
+| `server/market.js` | Warframe.Market and Riven.market listing normalization, caching, grouping, and rate-limit behavior |
+| `server/riven-weapons.generated.js` | Generated weapon catalog from Warframe Wiki disposition data plus localized Warframe Status item data |
+| `server/store.js` | Local Riven watch persistence in `data/rivens.json` |
 
-### 数据来源
+### Data Sources
 
-- `warframe.market`：主市场源，使用公开拍卖接口按武器搜索裂罅订单。
-- `riven.market`：补充市场源，该站没有稳定公开 JSON API；项目使用其列表页同源的 HTML 列表端点按武器查询，并把 `.riven` 数据标准化到同一订单格式。
-- `Warframe Wiki`：用于生成可拥有裂罅的武器系列和裂罅倾向信息。
-- `warframestat.us`：用于补充武器本地化名称。
+- `warframe.market`: primary market source, using the public auction API to search Riven listings by weapon.
+- `riven.market`: supplemental market source. The site does not expose a stable public JSON API, so the app queries the same HTML listing endpoint used by its list page and normalizes `.riven` data into the shared listing format.
+- `Warframe Wiki`: source for Riven-capable weapon families and Riven disposition data.
+- `warframestat.us`: source for localized weapon names.
 
-Riven.market 作为 best-effort 补充源运行：如果该站响应慢、超时或页面结构变化，后端会保留 Warframe.Market 的结果，不让补充源阻断主刷新。
+Riven.market runs as a best-effort supplemental source. If it is slow, times out, or changes its page structure, the backend keeps Warframe.Market results and does not let the supplemental source block the main refresh.
 
-### 刷新逻辑
+### Refresh Behavior
 
-后端默认使用 2 分钟缓存窗口。刷新时会先按武器分组，每个武器在每个市场源只搜索一次，然后在本地为所有匹配的裂罅监控项过滤订单。
+The backend defaults to a 2-minute cache window. During refresh, it groups watches by weapon and searches each weapon once per market source, then filters the returned listings locally for every matching Riven watch.
 
-Warframe.Market 请求按顺序执行，每次请求间隔 1 秒。如果 Warframe.Market 返回 `429`，后端会对同一个武器进行渐进退避重试：`10s`、`20s`、`40s`。当追踪武器很多时，强制刷新会复用仍有效的按武器缓存，避免一次性刷新所有武器。Riven.market 请求有短超时和独立缓存，失败时只记录来源状态，不影响主市场订单。
+Warframe.Market requests are sequential and spaced by 1 second. If Warframe.Market returns `429`, the backend retries the same weapon with progressive backoff: `10s`, `20s`, then `40s`. Large force-refreshes reuse valid per-weapon cache entries instead of refreshing every tracked weapon at once. Riven.market requests use a short timeout and independent cache; failures are recorded as source status and do not block primary market listings.
 
-### 系统通知
+### System Notices
 
-网页内置通知中心会在三种情况下提醒：新的在线订单、订单价格低于该裂罅设置的最高价、Warframe.Market 限流等待。首次加载会先记录已有订单，避免把旧订单一次性弹出。
+The web UI includes a notice center for three cases: new online listings, listings priced below the Riven watch's max-price threshold, and Warframe.Market rate-limit waiting. First load seeds existing listings silently so old orders do not flood the user.
 
-浏览器系统通知需要用户点击「启用浏览器通知」授权。授权成功后会立即发出一条测试通知，并写入网页内的「系统通知」中心。授权后可以使用「提示音」开关播放轻量提示音；提示音由 Web Audio 在浏览器内合成，不下载音频文件，也不会增加额外缓存。前端只保存最近 30 条通知和最近 500 个已见订单 key，不保存完整订单缓存，也不保存 Discord 或 QQ 的 webhook secret。
+Browser system notifications require the user to click "Enable browser notices" and grant permission. After permission is granted, the app immediately sends a test notification and records it in the in-page System Notices center. The "Sound" toggle can play a lightweight cue; the cue is synthesized with Web Audio in the browser, so no audio file is downloaded and no extra cache is created. The frontend only stores the latest 30 notices and the latest 500 seen listing keys. It does not store full listing caches, Discord webhooks, or QQ bot secrets.
 
-Discord / QQ 推送更适合放在后端服务器：用 `.env` 配置 webhook 或机器人 token，由服务器在产生通知事件时转发。不要把这类 secret 放到浏览器端或 localStorage。
+Discord / QQ forwarding belongs on the backend server: configure webhook URLs or bot tokens through `.env`, then forward server-side notification events. Do not put those secrets in browser code or localStorage.
 
-### 已完成
+### Done
 
-- 系统通知：新的在线订单、低价阈值命中、限流等待、浏览器测试通知和提示音已经接入。
+- System notices: new online listings, below-threshold prices, rate-limit waiting, browser test notices, and sound cues are implemented.
 
-### 待办
+### TODO
 
-0. 裂罅估值：根据武器、正负词条、价格区间和市场订单给出基础判断。
-1. 在线演示版本：部署只读 Demo，让用户不用本地启动也能试用界面和流程。
-2. 外部推送：在后端安全配置 Discord / QQ 推送，不把 webhook secret 暴露给网页。
-3. Warframe.Market 快速联系：为卖家订单生成更快的联系入口和游戏内私聊消息。
-4. 价格历史：记录同类裂罅的价格变化，辅助判断是否值得购买。
-5. 云端同步：为后端服务器准备账号、数据库和跨设备裂罅配置同步。
-6. 导入导出：支持备份、迁移和分享裂罅监控配置。
+0. Riven evaluation: score a Riven from weapon, positive/negative stats, price range, and current market listings.
+1. Online demo: deploy a read-only demo so users can try the interface without running it locally.
+2. External push: safely configure Discord / QQ forwarding on the backend without exposing webhook secrets to the web UI.
+3. Faster Warframe.Market seller contact: generate quicker seller actions and in-game whisper messages from each listing.
+4. Price history: keep comparable Riven price movement for better buy decisions.
+5. Cloud sync: prepare accounts, database storage, and cross-device watch synchronization for the backend server.
+6. Import/export: support backup, migration, and sharing of Riven watch configs.
 
-### 说明
+### Notes
 
-- 本项目与 Digital Extremes、Warframe.Market 或 Riven.market 没有从属关系。
-- Warframe 及相关名称属于其各自所有者的商标。
-- 本地保存的裂罅监控项位于 `data/rivens.json`，该目录已被 git 忽略。
+- This project is not affiliated with Digital Extremes, Warframe.Market, or Riven.market.
+- Warframe and related names are trademarks of their respective owners.
+- Stored Riven watches are local machine data in `data/rivens.json`, which is ignored by git.
 
-### 许可证
+### License
 
-MIT。详见 `LICENSE`。
+MIT. See `LICENSE`.
